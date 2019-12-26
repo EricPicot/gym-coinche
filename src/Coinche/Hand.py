@@ -7,6 +7,17 @@ spades = 2
 hearts = 3
 suits = ["c", "d", "s", "h"]
 
+atout_rank = dict(
+    [(7,1),
+    (8,2),
+    (9,7),
+    (10,5),
+    (11,8),
+    (12,3),
+    (13,4),
+    (14,6)]
+)
+
 class Hand:
     def __init__(self):
 
@@ -23,7 +34,21 @@ class Hand:
 
     def size(self):
         return len(self.clubs) + len(self.diamonds) + len(self.spades) + len(self.hearts)
-
+    
+    def highestAtoutRank(self, atout_suit):
+        suit_cards = self.hand[atout_suit]            #If player has some atouts
+        if len(suit_cards)==0:
+            return 0
+        else:
+            return self.getMaxRankOfSuit(suit_cards)
+                
+    def getMaxRankOfSuit(self, suit):
+        rank = 0
+        for card in suit:
+            if atout_rank[card.rank.rank] > rank:
+                rank = atout_rank[card.rank.rank]
+        return rank
+    
     def addCard(self, card):
         if card.suit == Suit(clubs):
 #             if card.rank.rank == 2:

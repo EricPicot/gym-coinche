@@ -35,6 +35,17 @@ atout_values = dict(
 )
 
 
+atout_rank = dict(
+    [(7,1),
+    (8,2),
+    (9,7),
+    (10,5),
+    (11,8),
+    (12,3),
+    (13,4),
+    (14,6)]
+)
+
 class CoincheEnv(Env):
 
     def __init__(self, playersName, maxScore=100):
@@ -56,6 +67,13 @@ class CoincheEnv(Env):
         self.players[2].team = self.teams[0]
         self.players[1].team = self.teams[1]
         self.players[3].team = self.teams[1]
+        
+        self.players[0].teammate = self.players[2]
+        self.players[2].teammate = self.players[0]
+        self.players[1].teammate = self.players[3]
+        self.players[3].teammate = self.players[1]
+        
+        
 
         '''
         Player physical locations:
@@ -84,33 +102,6 @@ class CoincheEnv(Env):
                     trickValue += generic_values[card.rank.rank]
         return trickValue
                 
-                
-
-    def _handleScoring(self):
-        
-        trickValue = self._countTrickValue()
-        
-        temp_score_list = [0, 0, 0, 0]
-        for current_player_i in range(len(self.players)):
-            heart_num = 0
-            queen_spades = False
-            for card in self.players[current_player_i].CardsInRound:
-                if card.suit == Suit(hearts):
-                    heart_num += 1
-                elif card == Card(queen, spades):
-                    queen_spades = True
-            
-            if heart_num == 13 and queen_spades == True:
-                temp_score_list = [26,26,26,26]
-                temp_score_list[current_player_i] = 0
-                break;
-            else:
-                temp_score_list[current_player_i] = heart_num + queen_spades*13
-        
-        for current_player_i in range(len(self.players)):
-            self.players[current_player_i].score += temp_score_list[current_player_i]
-        
-        return temp_score_list
     
     @classmethod
     def _handsToStrList(self, hands):
@@ -134,8 +125,7 @@ class CoincheEnv(Env):
         self.trickWinner = self.currentTrick.winner
         p = self.players[self.trickWinner]
         p.trickWon(self.currentTrick.trick)
-        #print(self._printCurrentTrick())
-        #print (p.name + " won the trick.")
+
 
 
     # print player's hand
@@ -293,7 +283,10 @@ class CoincheEnv(Env):
             }
 
     def _event_PlayTrick_Action(self, action_data):
-        
+        for p in self.players:
+            print("Atout hand", p.hand.highestAtoutRank(self.atout_suit))
+        print("highest atout rank",self.currentTrick.highest_rank)
+        print("hisghest is atout", self.currentTrick.highest_is_atout)
         shift = self.event_data_for_server['shift']
         current_player_i = (self.trickWinner + shift)%4
         current_player = self.players[current_player_i]
@@ -301,18 +294,32 @@ class CoincheEnv(Env):
 
         if shift==0:
             self.currentTrick.setTrickSuit(addCard)
-
-        if addCard is not None:
-
-
+# If suit is atout, you must go higher if you can
+        if (addCard is not None and 
+            addCard.suit == Suit(self.atout_suit) and 
+            self.currentTrick.suit == Suit(self.atout_suit)):
+        
+            if (current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
+                atout_rank[addCard.rank.rank] < self.currentTrick.highest_rank):
+                print("Must put a higher atout")
+                addCard = None
+                
             # player tries to play off suit but has trick suit
             if addCard is not None and addCard.suit != self.currentTrick.suit:
                 if current_player.hasSuit(self.currentTrick.suit):
                     print ("Must play the suit of the current trick.")
                     addCard = None
-                elif current_player.hasAtout(Suit(self.atout_suit)) and addCard.suit != Suit(self.atout_suit) :
+                elif current_player.hasAtout(Suit(self.atout_suit)) and addCard.suit != Suit(self.atout_suit):
                     print ("Must play Atout.")
                     addCard = None
+                elif (current_player.hasAtout(Suit(self.atout_suit)) and
+                      addCard.suit == Suit(self.atout_suit)):
+                    print("one")
+                    if (self.currentTrick.highest_is_atout and
+                        current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
+                        atout_rank[addCard.rank.rank] < self.currentTrick.highest_rank):
+                        print("Must put a higher atout")
+                        addCard = None
 
 
         if addCard is not None:

@@ -8,6 +8,11 @@ class Player:
             self.tricksWon = []
             self.CardsInRound = []
             self.team = None
+            self.teammate = None
+            
+    def hasHigherAtout(self, atout_suit, currentHighestAtout):
+        """ Return True if the player has in his hand a higher atout than the current higher attout in the trick"""
+        return self.hand.highestAtoutRank(atout_suit) > currentHighestAtout
 
     def addCard(self, card):
         self.hand.addCard(card)

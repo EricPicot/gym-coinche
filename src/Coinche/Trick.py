@@ -27,6 +27,17 @@ atout_values = dict(
     (14,11)]
 )
 
+atout_rank = dict(
+    [(7,1),
+    (8,2),
+    (9,7),
+    (10,5),
+    (11,8),
+    (12,3),
+    (13,4),
+    (14,6)]
+)
+
 class Trick:
     def __init__(self):
         self.trick = [Card(0,-1), Card(0,-1), Card(0,-1), Card(0,-1)]
@@ -35,6 +46,8 @@ class Trick:
         self.highest = 0 # rank of the high trump suit card in hand
         self.winner = -1
         self.highest_is_atout = False
+        self.highest_rank = 0
+
 
     def reset(self):
         self.trick = [Card(0,-1), Card(0,-1), Card(0,-1), Card(0,-1)]
@@ -44,6 +57,7 @@ class Trick:
         self.highest = 0
         self.winner = -1
         self.highest_is_atout = False
+        self.highest_rank = 0
 
     # def cardsInTrick(self):
     #     count = 0
@@ -66,12 +80,14 @@ class Trick:
         if card.suit == atout_suit:
 
             if not self.highest_is_atout:
+                self.highest_rank = atout_rank[card.rank.rank]
                 self.highest = atout_values[card.rank.rank]
                 self.winner = index
                 self.highest_is_atout = True
 
             else:
                 if atout_values[card.rank.rank] > self.highest:
+                    self.highest_rank = atout_rank[card.rank.rank]
                     self.highest = atout_values[card.rank.rank]
                     self.winner = index
             # Is the atout  better than a previous atout
