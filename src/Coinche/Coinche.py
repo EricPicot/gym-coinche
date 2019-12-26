@@ -1,8 +1,8 @@
 from .Deck import Deck
 from .Card import Card, Suit, Rank
-from .Player import Player
+from .Player import Player, Team
 from .Trick import Trick
-
+import random
 from gym import Env
 
 '''Change auto to False if you would like to play the game manually.'''
@@ -11,12 +11,28 @@ from gym import Env
 '''game by "guess and check", randomly trying moves until it finds a'''
 '''valid one.'''
 
-totalTricks = 13
+generic_values =dict(
+    [(7,0),
+    (8,0),
+    (9,0),
+    (10,10),
+    (11,2),
+    (12,3),
+    (13,4),
+    (14,11)]
+)
 
-queen = 12
-noSuit = -1
-spades = 2
-hearts = 3
+
+atout_values = dict(
+    [(7,0),
+    (8,0),
+    (9,14),
+    (10,10),
+    (11,20),
+    (12,3),
+    (13,4),
+    (14,11)]
+)
 
 
 class CoincheEnv(Env):
@@ -31,11 +47,15 @@ class CoincheEnv(Env):
         self.passes = [1, -1, 2, 0]  # left, right, across, no pass
         self.currentTrick = Trick()
         self.trickWinner = -1
-        self.shootingMoon = False
 
         # Make four players
 
         self.players = [Player(playersName[0]), Player(playersName[1]), Player(playersName[2]), Player(playersName[3])]
+        self.teams = [Team(self.players[0], self.players[2]), Team(self.players[1], self.players[3])]
+        self.players[0].team = self.teams[0]
+        self.players[2].team = self.teams[0]
+        self.players[1].team = self.teams[1]
+        self.players[3].team = self.teams[1]
 
         '''
         Player physical locations:
@@ -51,9 +71,25 @@ class CoincheEnv(Env):
         self.round = 0
         
         self.renderInfo = {'printFlag': False, 'Msg': ""}
+        
+    def _countTrickValue(self):
+        trickValue = 0
+        for card in self.currentTrick.trick:
+
+            if card !=Card(0,-1):
+                if card.suit.iden == self.atout_suit:
+                    trickValue += atout_values[card.rank.rank]
+                else:
+
+                    trickValue += generic_values[card.rank.rank]
+        return trickValue
+                
+                
 
     def _handleScoring(self):
-              
+        
+        trickValue = self._countTrickValue()
+        
         temp_score_list = [0, 0, 0, 0]
         for current_player_i in range(len(self.players)):
             heart_num = 0
@@ -67,7 +103,6 @@ class CoincheEnv(Env):
             if heart_num == 13 and queen_spades == True:
                 temp_score_list = [26,26,26,26]
                 temp_score_list[current_player_i] = 0
-                self.shootingMoon = True
                 break;
             else:
                 temp_score_list[current_player_i] = heart_num + queen_spades*13
@@ -173,29 +208,29 @@ class CoincheEnv(Env):
         self.roundNum += 1
         self.trickNum = 0
         self.trickWinner = -1
-        self.shootingMoon = False
         self.dealer = (self.dealer + 1) % len(self.players)
         self._dealCards()
         self.currentTrick = Trick()
         self.round += 1
         self.atout_suit = 2
+        self.contrat = 81
+        self.leadingTeam = random.randint(0,1)
         for p in self.players:
-            p.resetRoundCards()
+            p.resetRound()
             p.discardTricks()
 
+        for t in self.teams:
+            t.score = 0
+            
         self.event_data_for_client \
         = {'event_name': self.event
            , 'broadcast': True
            , 'data': {
-               "players" : [
-                   {'playerName': self.players[0].name,
-                    'score': self.players[0].score},
-                   {'playerName': self.players[1].name,
-                    'score': self.players[1].score},
-                   {'playerName': self.players[2].name,
-                    'score': self.players[2].score},
-                   {'playerName': self.players[3].name,
-                    'score': self.players[3].score}
+               "Teams" : [
+                   {'teamName': self.teams[0].name,
+                    'score': self.teams[0].score},
+                   {'teamName': self.teams[1].name,
+                    'score': self.teams[1].score},
                    ]
                }
            }
@@ -208,6 +243,7 @@ class CoincheEnv(Env):
         self.renderInfo['Msg'] = '\n*** Start Round {0} ***\n'.format(self.round)
         for p in self.players:
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
+            self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
 
 
     
@@ -272,7 +308,6 @@ class CoincheEnv(Env):
             # player tries to play off suit but has trick suit
             if addCard is not None and addCard.suit != self.currentTrick.suit:
                 if current_player.hasSuit(self.currentTrick.suit):
-                    print(self.currentTrick.suit)
                     print ("Must play the suit of the current trick.")
                     addCard = None
                 elif current_player.hasAtout(Suit(self.atout_suit)) and addCard.suit != Suit(self.atout_suit) :
@@ -295,7 +330,7 @@ class CoincheEnv(Env):
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = "\n" + self._printCurrentTrick()
-        
+        self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
         self.event_data_for_client \
         =   { "event_name" : self.event,
                 "broadcast" : True,
@@ -303,18 +338,23 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickSuit': self.currentTrick.suit.__str__(),
                     'currentTrick': self._getCurrentTrickStrList(),
+                    'trickValue': self._countTrickValue()
                 }
             }
         
         if self.currentTrick.cardsInTrick < 4:
             self.event = 'PlayTrick'
         else:
+            
             self.event = 'ShowTrickEnd'
+            self._evaluateTrick()
+        
+            self.players[self.trickWinner].score += self._countTrickValue()
+            [t.updateRoundScore() for t in self.teams]
         
     def _event_ShowTrickEnd(self):
         
-        self._evaluateTrick()
-        
+
         cards = []
         for card in self.currentTrick.trick:
             cards += [str(card)]
@@ -332,7 +372,14 @@ class CoincheEnv(Env):
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Trick {0} ***\n'.format(self.trickNum+1)
         self.renderInfo['Msg'] += 'Winner: {0}\n'.format(self.players[self.trickWinner].name)
+        self.renderInfo['Msg'] += 'ValueTrick: {0}\n'.format(self._countTrickValue())
+
+        for i in range(2):
+            self.renderInfo['Msg'] += '{}:{}\n'.format(self.teams[i].name, self.teams[i].score)
+
+        self.renderInfo['Msg'] += 'Winning team: {0}\n'.format(self.players[self.trickWinner].team.name)
         self.renderInfo['Msg'] += 'cards: {0}\n'.format(cards)
+
         self.renderInfo['Msg'] += 'AtoutIs: {0}\n'.format(Suit(self.atout_suit).string)
         
         self.currentTrick = Trick()
@@ -347,37 +394,39 @@ class CoincheEnv(Env):
                 
     def _event_RoundEnd(self):
 
-        this_round_score = self._handleScoring()
 
         self.event_data_for_client \
         =   { "event_name" : self.event,
                 "broadcast" : True,
                 "data" : {
-                    "players" : [
-                       {'playerName': self.players[0].name,
-                        'score': self.players[0].score},
-                       {'playerName': self.players[1].name,
-                        'score': self.players[1].score},
-                       {'playerName': self.players[2].name,
-                        'score': self.players[2].score},
-                       {'playerName': self.players[3].name,
-                        'score': self.players[3].score}
+                    "teams" : [
+                       {'TeamName': self.teams[0].name,
+                        'score': self.teams[0].score},
+                       {'TeamName': self.teams[1].name,
+                        'score': self.teams[1].score},
                        ],
-                    'ShootingMoon': self.shootingMoon,
                     'Round': self.round,
                 }
             }
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Round {0} End ***\n'.format(self.round)
-        for p in self.players:
-            self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
+        for t in self.teams:
+            self.renderInfo['Msg'] += '{0}: {1}\n'.format(t.name, t.score)
             
-        self.renderInfo['Msg'] += '\nShootingMoon: {0}\n'.format(self.shootingMoon)
-        
-        temp_loser = max(self.players, key=lambda x:x.score)
+        roundScore_list_for_teams = [0,0]
+        if self.teams[self.leadingTeam].score >= self.contrat:
+            self.teams[self.leadingTeam].globalScore += self.contrat
+            roundScore_list_for_teams[self.leadingTeam] = self.contrat
+
+        else:
+            self.teams[self.leadingTeam-1].globalScore += self.contrat
+            roundScore_list_for_teams[self.leadingTeam -1] = self.contrat
+
+        roundScore_list_for_players = roundScore_list_for_teams*2
+        max_score_team = max(self.teams, key=lambda x:x.globalScore)
         # new round if no one has lost
-        if temp_loser.score < self.maxScore:
+        if max_score_team.globalScore < self.maxScore:
             self.event = 'NewRound'
             self.event_data_for_server = {}
         else:
@@ -386,27 +435,23 @@ class CoincheEnv(Env):
         
         reward = {}
         for current_player_i in range(len(self.players)):
-            reward[self.players[current_player_i].name] = this_round_score[current_player_i]
+            reward[self.players[current_player_i].name] = roundScore_list_for_players[current_player_i]
         return reward
         
     def _event_GameOver(self):
         
-        winner = min(self.players, key=lambda x:x.score)
+        winner = min(self.teams, key=lambda x:x.globalScore)
         
         self.event_data_for_client \
         =   { "event_name" : self.event,
                 "broadcast" : True,
                 "data" : {
-                    "players" : [
-                        {'playerName': self.players[0].name,
-                         'score': self.players[0].score},
-                        {'playerName': self.players[1].name,
-                         'score': self.players[1].score},
-                        {'playerName': self.players[2].name,
-                         'score': self.players[2].score},
-                        {'playerName': self.players[3].name,
-                         'score': self.players[3].score}
-                        ],
+                    "teams" : [
+                        {'TeamName': self.teams[0].name,
+                        'score': self.teams[0].globalScore},
+                       {'TeamName': self.teams[1].name,
+                        'score': self.teams[1].globalScore},
+                       ],
                     'Round': self.round,
                     'Winner': winner.name
                 }
@@ -415,7 +460,8 @@ class CoincheEnv(Env):
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Game Over ***\n'
         for p in self.players:
-            self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
+            self.renderInfo['Msg'] += 'round score {0}: {1}\n'.format(p.name, p.score)
+            self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.globalScore)
         
         self.renderInfo['Msg'] += '\nRound: {0}\n'.format(self.round)
         self.renderInfo['Msg'] += 'Winner: {0}\n'.format(winner.name)
@@ -457,7 +503,6 @@ class CoincheEnv(Env):
         elif self.event == 'PlayTrick' or self.event == 'ShowTrickAction' or self.event == 'ShowTrickEnd':
             print(self.event)
             if action_data != None and action_data['event_name'] == "PlayTrick_Action":
-                print("You chose: ",action_data)
 
                 self._event_PlayTrick_Action(action_data)
             else:
@@ -465,6 +510,8 @@ class CoincheEnv(Env):
                     self._event_PlayTrick()
                 elif self.event == 'ShowTrickEnd':
                     self._event_ShowTrickEnd()
+                    reward = self._countTrickValue()
+
         
         elif self.event == 'RoundEnd':
             reward = self._event_RoundEnd()
@@ -476,6 +523,6 @@ class CoincheEnv(Env):
             self.event_data_for_client = None
             done = True
 
-
+        print(reward)
         observation = self.event_data_for_client
         return observation, reward, done, info

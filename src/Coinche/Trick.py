@@ -1,4 +1,4 @@
-from .Card import Suit
+from .Card import Suit, Card, Rank
 
 hearts = 3 # the corresponding index to the suit hearts
 spades = 2
@@ -29,7 +29,7 @@ atout_values = dict(
 
 class Trick:
     def __init__(self):
-        self.trick = [0, 0, 0, 0]
+        self.trick = [Card(0,-1), Card(0,-1), Card(0,-1), Card(0,-1)]
         self.suit = Suit(spades)
         self.cardsInTrick = 0
         self.highest = 0 # rank of the high trump suit card in hand
@@ -37,7 +37,8 @@ class Trick:
         self.highest_is_atout = False
 
     def reset(self):
-        self.trick = [0, 0, 0, 0]
+        self.trick = [Card(0,-1), Card(0,-1), Card(0,-1), Card(0,-1)]
+#         self.trick = [0, 0, 0, 0]
         self.suit = -1
         self.cardsInTrick = 0
         self.highest = 0
@@ -61,11 +62,8 @@ class Trick:
 
         self.trick[index] = card
         self.cardsInTrick += 1
-        print(self.cardsInTrick)
         # If the card is an atout
         if card.suit == atout_suit:
-            print("c'est un atout")
-            print(atout_values[card.rank.rank])
 
             if not self.highest_is_atout:
                 self.highest = atout_values[card.rank.rank]
@@ -84,5 +82,4 @@ class Trick:
                     self.highest = generic_values[card.rank.rank]
                     self.winner = index
                     #print ("Highest:",self.highest)
-        print(self.highest, self.highest_is_atout)
 
