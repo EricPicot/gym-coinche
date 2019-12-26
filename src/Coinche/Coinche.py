@@ -19,7 +19,7 @@ spades = 2
 hearts = 3
 
 
-class HeartsEnv(Env):
+class CoincheEnv(Env):
 
     def __init__(self, playersName, maxScore=100):
         
