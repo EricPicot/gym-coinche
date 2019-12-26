@@ -5,7 +5,7 @@ from Agent.human import Human
 from Agent.randomAI import RandomAI
 
 NUM_EPISODES = 1
-MAX_SCORE = 1
+MAX_SCORE = 100
 
 playersNameList = ['Nord', 'Est', 'Sud', 'Ouest']
 agent_list = [0, 0, 0, 0]
@@ -21,9 +21,9 @@ agent_list = [0, 0, 0, 0]
 # Random play
 
 agent_list[0] = Human(playersNameList[0], {'print_info': True})
-agent_list[1] = RandomAI(playersNameList[1], {'print_info': True})
-agent_list[2] = RandomAI(playersNameList[2], {'print_info': True})
-agent_list[3] = RandomAI(playersNameList[3], {'print_info': True})
+agent_list[1] = RandomAI(playersNameList[1], {'print_info': False})
+agent_list[2] = RandomAI(playersNameList[2], {'print_info': False})
+agent_list[3] = RandomAI(playersNameList[3], {'print_info': False})
 
 
 env = gym.make('Coinche_Game-v0')
