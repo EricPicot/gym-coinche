@@ -43,7 +43,8 @@ class Player:
 
     
 class Team:
-    def __init__(self, player1, player2):
+    def __init__(self,team_number, player1, player2):
+        self.teamNumber = team_number
         self.player1 = player1
         self.player2 = player2
         self.name = self.player1.name + " " + self.player2.name

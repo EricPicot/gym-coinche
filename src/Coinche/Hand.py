@@ -1,5 +1,6 @@
 from random import randint
 from .Card import Suit
+from.CardsOrder import atout_rank
 
 clubs = 0
 diamonds = 1
@@ -7,16 +8,7 @@ spades = 2
 hearts = 3
 suits = ["c", "d", "s", "h"]
 
-atout_rank = dict(
-    [(7,1),
-    (8,2),
-    (9,7),
-    (10,5),
-    (11,8),
-    (12,3),
-    (13,4),
-    (14,6)]
-)
+
 
 class Hand:
     def __init__(self):
