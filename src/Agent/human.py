@@ -7,18 +7,34 @@ class Human:
             print(observation)
         elif observation['event_name'] == 'NewRound':
             print(observation)
-        elif observation['event_name'] == 'PassCards':
+        elif observation['event_name'] == 'ChooseContrat':
             print(observation)
-            passCards = []
-            for i in range(3):
-                passCards.append(input('{0} pass card{1}: '.format(self.name, i+1)))
+            former_value = observation["data"]["contrat"]
+            contrat_dict = {"suit": int(observation["data"]["suit"]),
+                            "value":  int(observation["data"]["contrat"]),
+                            "newContrat": False}
+            print('current contrat: ', contrat_dict)
 
-            print('passCards: ', passCards)
+            suit = input('suit of the new contrat: ')
+            contrat = input('value of the new contrat: ')
+            if suit != "":
+                
+                contrat_dict["newContrat"]=True
+                contrat_dict["suit"] =int(suit)
+                contrat_dict["value"] = int(contrat)
+                while former_value >= contrat_dict["value"]:
+                    print("you must increase the value of the proposed contrat")
+                    contrat_dict["value"] = input('value of the new contrat: ')
+
+                while contrat_dict["value"]%10!=0:        
+                    print("Must choose a multiple of 10")
+                    contrat_dict["value"] = input('value of the new contrat: ')
+            print(contrat_dict)
             return {
-                    "event_name" : "PassCards_Action",
+                    "event_name" : "ChooseContratAction",
                     "data" : {
                         'playerName': self.name,
-                        'action': {'passCards': passCards}
+                        'action': contrat_dict
                     }
                 }
 

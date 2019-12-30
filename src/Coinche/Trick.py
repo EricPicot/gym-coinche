@@ -1,42 +1,9 @@
 from .Card import Suit, Card, Rank
-
+from .CardsOrder import *
 hearts = 3 # the corresponding index to the suit hearts
 spades = 2
 queen = 12
 
-generic_values =dict(
-    [(7,0),
-    (8,0),
-    (9,0),
-    (10,10),
-    (11,2),
-    (12,3),
-    (13,4),
-    (14,11)]
-)
-
-
-atout_values = dict(
-    [(7,0),
-    (8,0),
-    (9,14),
-    (10,10),
-    (11,20),
-    (12,3),
-    (13,4),
-    (14,11)]
-)
-
-atout_rank = dict(
-    [(7,1),
-    (8,2),
-    (9,7),
-    (10,5),
-    (11,8),
-    (12,3),
-    (13,4),
-    (14,6)]
-)
 
 class Trick:
     def __init__(self):

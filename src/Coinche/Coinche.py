@@ -2,6 +2,7 @@ from .Deck import Deck
 from .Card import Card, Suit, Rank
 from .Player import Player, Team
 from .Trick import Trick
+from.CardsOrder import *
 import random
 from gym import Env
 
@@ -11,40 +12,7 @@ from gym import Env
 '''game by "guess and check", randomly trying moves until it finds a'''
 '''valid one.'''
 
-generic_values =dict(
-    [(7,0),
-    (8,0),
-    (9,0),
-    (10,10),
-    (11,2),
-    (12,3),
-    (13,4),
-    (14,11)]
-)
 
-
-atout_values = dict(
-    [(7,0),
-    (8,0),
-    (9,14),
-    (10,10),
-    (11,20),
-    (12,3),
-    (13,4),
-    (14,11)]
-)
-
-
-atout_rank = dict(
-    [(7,1),
-    (8,2),
-    (9,7),
-    (10,5),
-    (11,8),
-    (12,3),
-    (13,4),
-    (14,6)]
-)
 
 class CoincheEnv(Env):
 
@@ -62,7 +30,7 @@ class CoincheEnv(Env):
         # Make four players
 
         self.players = [Player(playersName[0]), Player(playersName[1]), Player(playersName[2]), Player(playersName[3])]
-        self.teams = [Team(self.players[0], self.players[2]), Team(self.players[1], self.players[3])]
+        self.teams = [Team(0,self.players[0], self.players[2]), Team(1,self.players[1], self.players[3])]
         self.players[0].team = self.teams[0]
         self.players[2].team = self.teams[0]
         self.players[1].team = self.teams[1]
@@ -202,9 +170,9 @@ class CoincheEnv(Env):
         self._dealCards()
         self.currentTrick = Trick()
         self.round += 1
-        self.atout_suit = 2
-        self.contrat = 81
-        self.leadingTeam = random.randint(0,1)
+        self.atout_suit = -1
+        self.contrat = 0
+        self.leadingTeam = None
         for p in self.players:
             p.resetRound()
             p.discardTricks()
@@ -235,7 +203,6 @@ class CoincheEnv(Env):
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
             self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
 
-
     
     def _event_ShowPlayerHand(self):
 
@@ -252,10 +219,65 @@ class CoincheEnv(Env):
             self.event_data_for_server['now_player_index'] += 1
         
         else:
-            self.event = 'PlayTrick'
+            self.event = 'ChooseContrat'
             self.event_data_for_server = {'shift': 0}
-            self._event_PlayTrick()
-    
+#             self._event_ChooseContrat()
+            
+
+    def _event_ChooseContrat(self):
+        shift = self.event_data_for_server['shift']
+        current_player_i = (self.trickWinner + shift)%4
+        current_player = self.players[current_player_i]
+
+        self.event_data_for_client \
+            =   {"event_name" : self.event,
+                 "broadcast" : False,
+                 "data" : {
+                     'playerName': current_player.name,
+                     'hand': self._handsToStrList(sum(current_player.hand.hand, [])),
+                     'contrat': self.contrat,
+                     'suit': self.atout_suit,
+                     'shift': shift}
+                }
+
+
+    def _event_ChooseContratAction(self, actionData):
+        shift = self.event_data_for_server['shift']
+
+        current_player_i = (self.trickWinner + shift)%4
+        current_player = self.players[current_player_i]
+        self.contrat = actionData["data"]["action"]["value"]
+        self.atout_suit = actionData["data"]["action"]["suit"]
+        if actionData["data"]["action"]["newContrat"]:
+            self.event_data_for_server['shift'] =0
+            self.leadingTeam = current_player.team.teamNumber
+
+            
+        if self.event_data_for_server['shift'] <3:
+
+            self.event_data_for_server['shift'] += 1
+            self.event = "ChooseContrat"
+            self._event_ChooseContrat()
+        else:
+            
+            self.event_data_for_server['shift'] += 1
+            if self.contrat == 0 and self.atout_suit== -1:
+                self.renderInfo['printFlag'] = True
+
+                self.renderInfo['Msg'] += "everybody passed - New round is comming"
+
+                self.event = 'RoundEnd'
+                self._event_ChooseContrat()
+                self.event_data_for_server = {}
+
+
+            else:
+                self.event = 'PlayTrick'
+                self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
+                self._event_PlayTrick()
+      
+            
+            
     def _event_PlayTrick(self):
                 
         shift = self.event_data_for_server['shift']
@@ -278,15 +300,13 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickSuit': self.currentTrick.suit.__str__(),
                     'currentTrick': self._getCurrentTrickStrList(),
-                    'Atout is': Suit(self.atout_suit).string
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
     def _event_PlayTrick_Action(self, action_data):
-        for p in self.players:
-            print("Atout hand", p.hand.highestAtoutRank(self.atout_suit))
-        print("highest atout rank",self.currentTrick.highest_rank)
-        print("hisghest is atout", self.currentTrick.highest_is_atout)
+
         shift = self.event_data_for_server['shift']
         current_player_i = (self.trickWinner + shift)%4
         current_player = self.players[current_player_i]
@@ -314,7 +334,7 @@ class CoincheEnv(Env):
                     addCard = None
                 elif (current_player.hasAtout(Suit(self.atout_suit)) and
                       addCard.suit == Suit(self.atout_suit)):
-                    print("one")
+                    # Player can play a higher atout but doesn't do so --> forced to play a higher atout
                     if (self.currentTrick.highest_is_atout and
                         current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
                         atout_rank[addCard.rank.rank] < self.currentTrick.highest_rank):
@@ -345,7 +365,9 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickSuit': self.currentTrick.suit.__str__(),
                     'currentTrick': self._getCurrentTrickStrList(),
-                    'trickValue': self._countTrickValue()
+                    'trickValue': self._countTrickValue(),
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
         
@@ -373,6 +395,8 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickWinner': self.players[self.trickWinner].name,
                     'cards': cards,
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
@@ -413,16 +437,23 @@ class CoincheEnv(Env):
                         'score': self.teams[1].score},
                        ],
                     'Round': self.round,
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Round {0} End ***\n'.format(self.round)
         for t in self.teams:
-            self.renderInfo['Msg'] += '{0}: {1}\n'.format(t.name, t.score)
+            self.renderInfo['Msg'] += 'round Score {0}: {1}\n'.format(t.name, t.score)
+            self.renderInfo['Msg'] += 'global score {0}: {1}\n'.format(t.name, t.globalScore)
+
             
         roundScore_list_for_teams = [0,0]
-        if self.teams[self.leadingTeam].score >= self.contrat:
+        if self.contrat == 0 and self.atout_suit==-1:
+            self.renderInfo['Msg'] += 'Everybody passed'
+
+        elif self.teams[self.leadingTeam].score >= self.contrat:
             self.teams[self.leadingTeam].globalScore += self.contrat
             roundScore_list_for_teams[self.leadingTeam] = self.contrat
 
@@ -466,7 +497,7 @@ class CoincheEnv(Env):
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Game Over ***\n'
-        for p in self.players:
+        for p in self.teams:
             self.renderInfo['Msg'] += 'round score {0}: {1}\n'.format(p.name, p.score)
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.globalScore)
         
@@ -497,16 +528,20 @@ class CoincheEnv(Env):
         
     def step(self, action_data):
         observation, reward, done, info = None, None, None, None
-            
+        print("\n \ntype of event in env.step: ",self.event)
         if self.event == 'NewRound':
             self._event_NewRound()
-                       
-        elif self.event == 'PassCards':
-            self._event_PassCards(action_data)
                       
         elif self.event == 'ShowPlayerHand':
             self._event_ShowPlayerHand()
 
+        elif self.event == 'ChooseContrat' or self.event == 'ChooseContratAction':
+            if action_data != None:
+                self._event_ChooseContratAction(action_data)
+            else:
+                if self.event == 'ChooseContrat':
+                    self._event_ChooseContrat()
+            
         elif self.event == 'PlayTrick' or self.event == 'ShowTrickAction' or self.event == 'ShowTrickEnd':
             print(self.event)
             if action_data != None and action_data['event_name'] == "PlayTrick_Action":

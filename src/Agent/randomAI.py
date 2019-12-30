@@ -18,6 +18,61 @@ class RandomAI:
         elif observation['event_name'] == 'NewRound':
             if self.print_info:
                 print(observation)
+                
+        elif observation['event_name'] == 'ChooseContrat':
+            print(observation)
+            former_value = observation["data"]["contrat"]
+            contrat_dict = {"suit": int(observation["data"]["suit"]),
+                            "value":  int(observation["data"]["contrat"]),
+                            "newContrat": False}
+            print('current contrat: ', contrat_dict)
+#           Choose if RandomAI make a call:
+            makeACall = random.uniform(0,1) >=0.75
+            if not makeACall or former_value==160:
+                suit= ""
+                contrat= ""
+            else:
+                suit = random.randint(0,3)
+                contrat = random.randint(8,16)*10
+            if suit != "":
+                
+
+            
+                contrat_dict["newContrat"]=True
+                contrat_dict["suit"] =int(suit)
+                contrat_dict["value"] = int(contrat)
+                while former_value >= contrat_dict["value"]:
+                    contrat_dict["value"] = random.randint(former_value/10,16)*10
+
+            return {
+                    "event_name" : "ChooseContratAction",
+                    "data" : {
+                        'playerName': self.name,
+                        'action': contrat_dict
+                    }
+                }
+        
+                
+        elif observation['event_name'] == 'ChooseContrat':
+            print(observation)
+            contrat_dict = {"suit":None,
+                       "value": None}
+            for i, key in enumerate(contrat_dict):
+                contrat_dict[key] = input('{0}: '.format(key
+                                                        ))
+                if key=="value":
+                    while contrat_dict[key]%10!=0:
+                        print("Must choose a multiple of 10")
+                        contrat_dict[key] = input('{0}: '.format(key))
+
+            print('contrat: ', contrat_dict)
+            return {
+                    "event_name" : "ChooseContrat_Action",
+                    "data" : {
+                        'playerName': self.name,
+                        'action': {'ChooseContrat': contrat_dict}
+                    }
+                }
         elif observation['event_name'] == 'PassCards':
             if self.print_info:
                 print(observation)
