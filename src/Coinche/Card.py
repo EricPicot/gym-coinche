@@ -86,12 +86,15 @@ class Rank:
 
         strings = ["T", "J", "Q", "K", "A"]
 
-        if rank >= 2 and rank <= 9:
+        if rank >= 7 and rank <= 9:
             self.string = str(rank)
         elif rank >= 10 and rank <= 14:
             self.string = strings[rank - 10]
+        elif rank == 0:
+            self.string = str(rank) #initialization
         else:
             print('Invalid rank identifier')
+            
 
     def __lt__(self, other):
         return self.rank < other.rank

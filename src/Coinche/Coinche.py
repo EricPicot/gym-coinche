@@ -170,8 +170,8 @@ class CoincheEnv(Env):
         self._dealCards()
         self.currentTrick = Trick()
         self.round += 1
-        self.atout_suit = 2
-        self.contrat = 81
+        self.atout_suit = -1
+        self.contrat = 0
         self.leadingTeam = None
         for p in self.players:
             p.resetRound()
@@ -220,13 +220,12 @@ class CoincheEnv(Env):
         
         else:
             self.event = 'ChooseContrat'
-            self.event_data_for_server = {'shift': 0,'now_player_index': 0}
-            self._event_ChooseContrat()
+            self.event_data_for_server = {'shift': 0}
+#             self._event_ChooseContrat()
             
 
     def _event_ChooseContrat(self):
         shift = self.event_data_for_server['shift']
-        print("shift", shift)
         current_player_i = (self.trickWinner + shift)%4
         current_player = self.players[current_player_i]
 
@@ -236,24 +235,17 @@ class CoincheEnv(Env):
                  "data" : {
                      'playerName': current_player.name,
                      'hand': self._handsToStrList(sum(current_player.hand.hand, [])),
-                    'contrat': self.contrat,
-                    'suit': self.atout_suit}
+                     'contrat': self.contrat,
+                     'suit': self.atout_suit,
+                     'shift': shift}
                 }
-#         else:
-#             self.event = "PlayTrick",
-#             print("let's go, atout suit is {0} and value of contrat is {1}".format(self.atout_suit, self.contrat))
-#             self.event_data_for_server = {'shift': 0}
-# #             self._event_PlayTrick()
-
-
 
 
     def _event_ChooseContratAction(self, actionData):
-        
         shift = self.event_data_for_server['shift']
+
         current_player_i = (self.trickWinner + shift)%4
         current_player = self.players[current_player_i]
-        
         self.contrat = actionData["data"]["action"]["value"]
         self.atout_suit = actionData["data"]["action"]["suit"]
         if actionData["data"]["action"]["newContrat"]:
@@ -262,13 +254,27 @@ class CoincheEnv(Env):
 
             
         if self.event_data_for_server['shift'] <3:
+
             self.event_data_for_server['shift'] += 1
+            self.event = "ChooseContrat"
             self._event_ChooseContrat()
         else:
-            self.event = 'PlayTrick'
-            self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
+            
+            self.event_data_for_server['shift'] += 1
+            if self.contrat == 0 and self.atout_suit== -1:
+                self.renderInfo['printFlag'] = True
 
-            self._event_PlayTrick()
+                self.renderInfo['Msg'] += "everybody passed - New round is comming"
+
+                self.event = 'RoundEnd'
+                self._event_ChooseContrat()
+                self.event_data_for_server = {}
+
+
+            else:
+                self.event = 'PlayTrick'
+                self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
+                self._event_PlayTrick()
       
             
             
@@ -294,7 +300,8 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickSuit': self.currentTrick.suit.__str__(),
                     'currentTrick': self._getCurrentTrickStrList(),
-                    'Atout is': Suit(self.atout_suit).string
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
@@ -358,7 +365,9 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickSuit': self.currentTrick.suit.__str__(),
                     'currentTrick': self._getCurrentTrickStrList(),
-                    'trickValue': self._countTrickValue()
+                    'trickValue': self._countTrickValue(),
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
         
@@ -386,6 +395,8 @@ class CoincheEnv(Env):
                     'trickNum': self.trickNum+1,
                     'trickWinner': self.players[self.trickWinner].name,
                     'cards': cards,
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
@@ -426,16 +437,23 @@ class CoincheEnv(Env):
                         'score': self.teams[1].score},
                        ],
                     'Round': self.round,
+                    'contrat': self.contrat,
+                    'suit': self.atout_suit
                 }
             }
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Round {0} End ***\n'.format(self.round)
         for t in self.teams:
-            self.renderInfo['Msg'] += '{0}: {1}\n'.format(t.name, t.score)
+            self.renderInfo['Msg'] += 'round Score {0}: {1}\n'.format(t.name, t.score)
+            self.renderInfo['Msg'] += 'global score {0}: {1}\n'.format(t.name, t.globalScore)
+
             
         roundScore_list_for_teams = [0,0]
-        if self.teams[self.leadingTeam].score >= self.contrat:
+        if self.contrat == 0 and self.atout_suit==-1:
+            self.renderInfo['Msg'] += 'Everybody passed'
+
+        elif self.teams[self.leadingTeam].score >= self.contrat:
             self.teams[self.leadingTeam].globalScore += self.contrat
             roundScore_list_for_teams[self.leadingTeam] = self.contrat
 
@@ -479,7 +497,7 @@ class CoincheEnv(Env):
 
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Game Over ***\n'
-        for p in self.players:
+        for p in self.teams:
             self.renderInfo['Msg'] += 'round score {0}: {1}\n'.format(p.name, p.score)
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.globalScore)
         
@@ -510,7 +528,7 @@ class CoincheEnv(Env):
         
     def step(self, action_data):
         observation, reward, done, info = None, None, None, None
-            
+        print("\n \ntype of event in env.step: ",self.event)
         if self.event == 'NewRound':
             self._event_NewRound()
                       
@@ -518,8 +536,7 @@ class CoincheEnv(Env):
             self._event_ShowPlayerHand()
 
         elif self.event == 'ChooseContrat' or self.event == 'ChooseContratAction':
-            if action_data != None and action_data['event_name'] == "ChooseContratAction":
-
+            if action_data != None:
                 self._event_ChooseContratAction(action_data)
             else:
                 if self.event == 'ChooseContrat':

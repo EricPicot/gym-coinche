@@ -5,29 +5,29 @@ from Agent.human import Human
 from Agent.randomAI import RandomAI
 
 NUM_EPISODES = 1
-MAX_SCORE = 100
+MAX_SCORE = 1000
 
 playersNameList = ['Nord', 'Est', 'Sud', 'Ouest']
 agent_list = [0, 0, 0, 0]
 
 # Human vs Random
 
-agent_list[0] = Human(playersNameList[0], {})
-agent_list[1] = Human(playersNameList[1], {'print_info': True})
-agent_list[2] = Human(playersNameList[2], {'print_info': True})
-agent_list[3] = Human(playersNameList[3], {'print_info': True})
+# agent_list[0] = Human(playersNameList[0], {})
+# agent_list[1] = Human(playersNameList[1], {'print_info': True})
+# agent_list[2] = Human(playersNameList[2], {'print_info': True})
+# agent_list[3] = Human(playersNameList[3], {'print_info': True})
 
 
 # Random play
 
-# agent_list[0] = Human(playersNameList[0], {'print_info': True})
-# agent_list[1] = RandomAI(playersNameList[1], {'print_info': True})
-# agent_list[2] = RandomAI(playersNameList[2], {'print_info': True})
-# agent_list[3] = RandomAI(playersNameList[3], {'print_info': False})
+agent_list[0] = RandomAI(playersNameList[0], {'print_info': False})
+agent_list[1] = RandomAI(playersNameList[1], {'print_info': False})
+agent_list[2] = RandomAI(playersNameList[2], {'print_info': False})
+agent_list[3] = RandomAI(playersNameList[3], {'print_info': False})
 
 
 env = gym.make('Coinche_Game-v0')
-env.__init__(playersNameList, MAX_SCORE)
+env.__init__(playersNameList, maxScore=MAX_SCORE)
 
 for i_episode in range(NUM_EPISODES):
     

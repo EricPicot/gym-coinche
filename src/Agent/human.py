@@ -9,18 +9,24 @@ class Human:
             print(observation)
         elif observation['event_name'] == 'ChooseContrat':
             print(observation)
-            contrat_dict = {"suit": observation["data"]["suit"],
-                            "value":  observation["data"]["contrat"],
+            former_value = observation["data"]["contrat"]
+            contrat_dict = {"suit": int(observation["data"]["suit"]),
+                            "value":  int(observation["data"]["contrat"]),
                             "newContrat": False}
             print('current contrat: ', contrat_dict)
-            print("do you want to pass ? prompt 'yes' or 'no'")
 
-            pass_bool = input()
-            if pass_bool == 'no':
+            suit = input('suit of the new contrat: ')
+            contrat = input('value of the new contrat: ')
+            if suit != "":
+                
                 contrat_dict["newContrat"]=True
-                contrat_dict["suit"] = int(input('suit of the new contrat: '))
-                contrat_dict["value"] = int(input('value of the new contrat: '))
-                while contrat_dict["value"]%10!=0:
+                contrat_dict["suit"] =int(suit)
+                contrat_dict["value"] = int(contrat)
+                while former_value >= contrat_dict["value"]:
+                    print("you must increase the value of the proposed contrat")
+                    contrat_dict["value"] = input('value of the new contrat: ')
+
+                while contrat_dict["value"]%10!=0:        
                     print("Must choose a multiple of 10")
                     contrat_dict["value"] = input('value of the new contrat: ')
             print(contrat_dict)
