@@ -236,7 +236,6 @@ class CoincheEnv(Env):
             self.event = 'ChooseContrat'
             self.event_data_for_server = {'shift': 0}
             self.numTurnOfAnnounce= 0
-#             self._event_ChooseContrat()
             
 
     def _event_ChooseContrat(self):
@@ -278,6 +277,7 @@ class CoincheEnv(Env):
         self.contrat = actionData["data"]["action"]["value"]
         self.atout_suit = actionData["data"]["action"]["suit"]
         
+#         if there is a modification of the previous contrat, new turn of announce starting after the current player
         if actionData["data"]["action"]["newContrat"]:
             self.playerToStartAnnounce = self.current_player_i
             self.numTurnOfAnnounce = 1
@@ -301,8 +301,8 @@ class CoincheEnv(Env):
                 self.event = 'RoundEnd'
                 self._event_ChooseContrat()
                 self.event_data_for_server = {}
-
-
+    
+            # if everyone had the opportunity to announce, let's play !
             else:
                 self.event = 'PlayTrick'
                 self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
@@ -344,8 +344,8 @@ class CoincheEnv(Env):
         addCard = current_player.play(action_data['data']['action']['card'])
 
         if shift==0:
-            self.currentTrick.setTrickSuit(addCard)
-# If suit is atout, you must go higher if you can
+            self.currentTrick.setTrickSuit(addCard) 
+        # If suit is atout, you must go higher if you can
         if (addCard is not None and 
             addCard.suit == Suit(self.atout_suit) and 
             self.currentTrick.suit == Suit(self.atout_suit)):
