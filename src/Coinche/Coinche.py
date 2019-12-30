@@ -28,14 +28,22 @@ class CoincheEnv(Env):
         self.trickWinner = -1
 
         # Make four players
-
-        self.players = [Player(playersName[0]), Player(playersName[1]), Player(playersName[2]), Player(playersName[3])]
-        self.teams = [Team(0,self.players[0], self.players[2]), Team(1,self.players[1], self.players[3])]
+        self.players = [Player(playersName[0]),
+                        Player(playersName[1]),
+                        Player(playersName[2]),
+                        Player(playersName[3])]
+        
+        # Make two teams
+        self.teams = [Team(0,self.players[0], self.players[2]),
+                      Team(1,self.players[1], self.players[3])]
+        
+        # Linking players to a team
         self.players[0].team = self.teams[0]
         self.players[2].team = self.teams[0]
         self.players[1].team = self.teams[1]
         self.players[3].team = self.teams[1]
         
+        # Linking players to their teammate
         self.players[0].teammate = self.players[2]
         self.players[2].teammate = self.players[0]
         self.players[1].teammate = self.players[3]
@@ -59,6 +67,12 @@ class CoincheEnv(Env):
         self.renderInfo = {'printFlag': False, 'Msg': ""}
         
     def _countTrickValue(self):
+        """ 
+        This function computes the value of the trick given if the cards are atout cards or not
+        ex:
+        if atout_suit is heart and the trick is [Ad, Td, 9h, 7d]:
+        --> the trickValue is 11(Ad) + 10(Td) + 14(9h) + 0(7d) = 35 for player "Sud"
+        """
         trickValue = 0
         for card in self.currentTrick.trick:
 
@@ -73,6 +87,9 @@ class CoincheEnv(Env):
     
     @classmethod
     def _handsToStrList(self, hands):
+        """
+        This function helps to print a hand of a player
+        """
         output = []
         for card in hands:
             output += [str(card)]
@@ -84,6 +101,10 @@ class CoincheEnv(Env):
                 self.trickWinner = i
 
     def _dealCards(self):
+        """
+        This function deals the deck
+        TODO: deal card the coinche way !!!
+        """
         i = 0
         while(self.deck.size() > 0):
             self.players[i % len(self.players)].addCard(self.deck.deal())
@@ -109,6 +130,7 @@ class CoincheEnv(Env):
     # show cards played in current trick
     def _printCurrentTrick(self):
         trickStr = '\nCurrent table:\n'
+        trickStr += "Atout suit of the round: " + Suit(self.atout_suit).__str__() + "\n"
         trickStr += "Trick suit: " + self.currentTrick.suit.__str__() + "\n"
         for i, card in enumerate(self.currentTrick.trick):
             if self.currentTrick.trick[i] is not 0:
@@ -127,14 +149,6 @@ class CoincheEnv(Env):
         
         return trick_list
         
-    def _getWinner(self):
-        minScore = self.maxScore
-        winner = None
-        for p in self.players:
-            if p.score < minScore:
-                winner = p
-                minScore = p.score
-        return winner
     
     def _event_GameStart(self):
         self.event_data_for_server = {}
@@ -221,20 +235,27 @@ class CoincheEnv(Env):
         else:
             self.event = 'ChooseContrat'
             self.event_data_for_server = {'shift': 0}
+            self.numTurnOfAnnounce= 0
 #             self._event_ChooseContrat()
             
 
     def _event_ChooseContrat(self):
         shift = self.event_data_for_server['shift']
-        current_player_i = (self.trickWinner + shift)%4
-        current_player = self.players[current_player_i]
+        
+        if shift == 0 and self.numTurnOfAnnounce==0:
+            self.playerToStartAnnounce = (self.dealer + 1)%4
+            self.current_player = self.players[self.playerToStartAnnounce]
+        else:
+            self.current_player_i = (self.playerToStartAnnounce+shift)%4
+            self.current_player = self.players[self.current_player_i]
+
 
         self.event_data_for_client \
             =   {"event_name" : self.event,
                  "broadcast" : False,
                  "data" : {
-                     'playerName': current_player.name,
-                     'hand': self._handsToStrList(sum(current_player.hand.hand, [])),
+                     'playerName': self.current_player.name,
+                     'hand': self._handsToStrList(sum(self.current_player.hand.hand, [])),
                      'contrat': self.contrat,
                      'suit': self.atout_suit,
                      'shift': shift}
@@ -242,15 +263,26 @@ class CoincheEnv(Env):
 
 
     def _event_ChooseContratAction(self, actionData):
+        
         shift = self.event_data_for_server['shift']
+        
+        if shift == 0 and self.numTurnOfAnnounce==0:
+            self.playerToStartAnnounce = (self.dealer + 1)%4
+            self.current_player = self.players[self.playerToStartAnnounce]
+            
+        else:
+            self.current_player_i = (self.playerToStartAnnounce+shift)%4
+            self.current_player = self.players[self.current_player_i]
 
-        current_player_i = (self.trickWinner + shift)%4
-        current_player = self.players[current_player_i]
+            
         self.contrat = actionData["data"]["action"]["value"]
         self.atout_suit = actionData["data"]["action"]["suit"]
+        
         if actionData["data"]["action"]["newContrat"]:
+            self.playerToStartAnnounce = self.current_player_i
+            self.numTurnOfAnnounce = 1
             self.event_data_for_server['shift'] =0
-            self.leadingTeam = current_player.team.teamNumber
+            self.leadingTeam = self.current_player.team.teamNumber
 
             
         if self.event_data_for_server['shift'] <3:
@@ -284,8 +316,7 @@ class CoincheEnv(Env):
         print("shift", shift, "trickNum", self.trickNum)
         if self.trickNum == 0 and shift == 0:
             
-            self.trickWinner = 1
-            current_player = self.players[self.trickWinner]
+            current_player = self.players[self.dealer + 1]
             
         else:
             current_player_i = (self.trickWinner + shift)%4

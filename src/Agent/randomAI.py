@@ -26,7 +26,7 @@ class RandomAI:
                             "value":  int(observation["data"]["contrat"]),
                             "newContrat": False}
             print('current contrat: ', contrat_dict)
-#           Choose if RandomAI make a call:
+#           Choose if RandomAI makes a call:
             makeACall = random.uniform(0,1) >=0.75
             if not makeACall or former_value==160:
                 suit= ""
