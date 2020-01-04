@@ -1,4 +1,4 @@
-generic_values =dict(
+generic_values = dict(
     [(7,0),
     (8,0),
     (9,0),

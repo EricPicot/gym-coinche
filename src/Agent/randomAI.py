@@ -1,5 +1,7 @@
 import random
 from datetime import datetime
+max_value = 8
+
 
 class RandomAI:
     def __init__(self, name, params = None):
@@ -11,7 +13,7 @@ class RandomAI:
         else:
             self.print_info = False
 
-    def Do_Action(self, observation):
+    def do_action(self, observation):
         if observation['event_name'] == 'GameStart':
             if self.print_info:
                 print(observation)
@@ -27,48 +29,45 @@ class RandomAI:
                             "newContrat": False}
             print('current contrat: ', contrat_dict)
 #           Choose if RandomAI makes a call:
-            makeACall = random.uniform(0,1) >=0.75
-            if not makeACall or former_value==160:
-                suit= ""
-                contrat= ""
+            make_a_call = random.uniform(0, 1) >= 0.75
+            if not make_a_call or former_value == 160:
+                suit = ""
+                contrat = ""
             else:
-                suit = random.randint(0,3)
-                contrat = random.randint(8,16)*10
-            if suit != "":
-                
+                suit = random.randint(0, 3)
+                contrat = random.randint(8, max_value)*10
+            if suit != "" and former_value < 80:
 
-            
-                contrat_dict["newContrat"]=True
-                contrat_dict["suit"] =int(suit)
+                contrat_dict["newContrat"] = True
+                contrat_dict["suit"] = int(suit)
                 contrat_dict["value"] = int(contrat)
                 while former_value >= contrat_dict["value"]:
-                    contrat_dict["value"] = random.randint(former_value/10,16)*10
+                    contrat_dict["value"] = random.randint(former_value/10, 16)*10
 
             return {
-                    "event_name" : "ChooseContratAction",
-                    "data" : {
+                    "event_name": "ChooseContratAction",
+                    "data": {
                         'playerName': self.name,
                         'action': contrat_dict
                     }
                 }
-        
-                
+
         elif observation['event_name'] == 'ChooseContrat':
             print(observation)
             contrat_dict = {"suit":None,
-                       "value": None}
+                            "value": None}
             for i, key in enumerate(contrat_dict):
                 contrat_dict[key] = input('{0}: '.format(key
                                                         ))
-                if key=="value":
+                if key == "value":
                     while contrat_dict[key]%10!=0:
                         print("Must choose a multiple of 10")
                         contrat_dict[key] = input('{0}: '.format(key))
 
             print('contrat: ', contrat_dict)
             return {
-                    "event_name" : "ChooseContrat_Action",
-                    "data" : {
+                    "event_name": "ChooseContrat_Action",
+                    "data": {
                         'playerName': self.name,
                         'action': {'ChooseContrat': contrat_dict}
                     }
@@ -77,16 +76,16 @@ class RandomAI:
             if self.print_info:
                 print(observation)
 
-            passCards = random.sample(observation['data']['hand'],3)
+            pass_cards = random.sample(observation['data']['hand'], 3)
 
             if self.print_info:
-                print(self.name, ' pass cards: ', passCards)
+                print(self.name, ' pass cards: ', pass_cards)
 
             return {
                     "event_name" : "PassCards_Action",
                     "data" : {
                         'playerName': self.name,
-                        'action': {'passCards': passCards}
+                        'action': {'passCards': pass_cards}
                     }
                 }
 

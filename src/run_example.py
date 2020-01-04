@@ -4,15 +4,15 @@ from Coinche import *
 from Agent.human import Human
 from Agent.randomAI import RandomAI
 
-NUM_EPISODES = 1
-MAX_SCORE = 1000
+NUM_EPISODES = 2
+MAX_SCORE = 10
 
 playersNameList = ['Nord', 'Est', 'Sud', 'Ouest']
 agent_list = [0, 0, 0, 0]
 
 # Human vs Random
 
-# agent_list[0] = Human(playersNameList[0], {})
+# agent_list[0] = Human(playersNameList[0], {'print_info': True})
 # agent_list[1] = Human(playersNameList[1], {'print_info': True})
 # agent_list[2] = Human(playersNameList[2], {'print_info': True})
 # agent_list[3] = Human(playersNameList[3], {'print_info': True})
@@ -41,12 +41,12 @@ for i_episode in range(NUM_EPISODES):
         action = None
         if IsBroadcast == True:
             for agent in agent_list:
-                agent.Do_Action(observation)
+                agent.do_action(observation)
         else:
             playName = observation['data']['playerName']
             for agent in agent_list:
                 if agent.name == playName:
-                    action = agent.Do_Action(observation)
+                    action = agent.do_action(observation)
 
         observation, reward, done, info = env.step(action)
 
@@ -56,3 +56,5 @@ for i_episode in range(NUM_EPISODES):
         if done:
             print('\nGame Over!!\n')
             break
+
+

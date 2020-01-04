@@ -2,7 +2,7 @@ class Human:
     def __init__(self, name, params):
         self.name = name
 
-    def Do_Action(self, observation):
+    def do_action(self, observation):
         if observation['event_name'] == 'GameStart':
             print(observation)
         elif observation['event_name'] == 'NewRound':
@@ -20,13 +20,13 @@ class Human:
             if suit != "":
                 
                 contrat_dict["newContrat"]=True
-                contrat_dict["suit"] =int(suit)
+                contrat_dict["suit"] = int(suit)
                 contrat_dict["value"] = int(contrat)
                 while former_value >= contrat_dict["value"]:
                     print("you must increase the value of the proposed contrat")
                     contrat_dict["value"] = input('value of the new contrat: ')
 
-                while contrat_dict["value"]%10!=0:        
+                while contrat_dict["value"]%10 != 0:
                     print("Must choose a multiple of 10")
                     contrat_dict["value"] = input('value of the new contrat: ')
             print(contrat_dict)
