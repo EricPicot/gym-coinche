@@ -1,5 +1,6 @@
 from .Hand import Hand
 
+
 class Player:
     def __init__(self, name):
             self.name = name
@@ -38,6 +39,7 @@ class Player:
 
     def resetRound(self):
         self.CardsInRound = []
+        self.hand = Hand()
         self.score = 0
 
 
@@ -62,7 +64,7 @@ class Team:
 
     def resetRoundCards(self):
         self.CardsInRound = []
-        
+
     def teamScore(self):
         return None
 

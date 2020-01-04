@@ -13,7 +13,6 @@ from gym import Env
 '''valid one.'''
 
 
-
 class CoincheEnv(Env):
 
     def __init__(self, playersName, maxScore=100):
@@ -72,6 +71,8 @@ class CoincheEnv(Env):
         ex:
         if atout_suit is heart and the trick is [Ad, Td, 9h, 7d]:
         --> the trickValue is 11(Ad) + 10(Td) + 14(9h) + 0(7d) = 35 for player "Sud"
+
+        There is also the 10 de der that gives ten extra points if you win last trick (7th trick)
         """
         trickValue = 0
         for card in self.currentTrick.trick:
@@ -82,6 +83,9 @@ class CoincheEnv(Env):
                 else:
 
                     trickValue += generic_values[card.rank.rank]
+        # 10 de der
+        if self.trickNum==7:
+            trickValue+=10
         return trickValue
                 
     
@@ -169,7 +173,8 @@ class CoincheEnv(Env):
             p.score = 0
         self.round = 0
     
-        self.renderInfo = {'printFlag': False, 'Msg': ""}
+        self.renderInfo = {'printFlag': False,
+                           'Msg': ""}
         self.renderInfo['printFlag'] = True
         self.renderInfo['Msg'] = '\n*** Hearts Start ***\n'
     
@@ -181,15 +186,17 @@ class CoincheEnv(Env):
         self.trickNum = 0
         self.trickWinner = -1
         self.dealer = (self.dealer + 1) % len(self.players)
+        for p in self.players:
+            p.resetRound()
+            p.discardTricks()
+
         self._dealCards()
         self.currentTrick = Trick()
         self.round += 1
         self.atout_suit = -1
         self.contrat = 0
         self.leadingTeam = None
-        for p in self.players:
-            p.resetRound()
-            p.discardTricks()
+
 
         for t in self.teams:
             t.score = 0
@@ -267,13 +274,13 @@ class CoincheEnv(Env):
         
         if shift == 0 and self.numTurnOfAnnounce==0:
             self.playerToStartAnnounce = (self.dealer + 1)%4
+            self.current_player_i = self.playerToStartAnnounce
             self.current_player = self.players[self.playerToStartAnnounce]
             
         else:
-            self.current_player_i = (self.playerToStartAnnounce+shift)%4
+            self.current_player_i = (self.playerToStartAnnounce+shift) % 4
             self.current_player = self.players[self.current_player_i]
 
-            
         self.contrat = actionData["data"]["action"]["value"]
         self.atout_suit = actionData["data"]["action"]["suit"]
         
@@ -322,17 +329,17 @@ class CoincheEnv(Env):
             current_player_i = (self.trickWinner + shift)%4
             current_player = self.players[current_player_i]
             
-        self.event_data_for_client \
-        =   { "event_name" : self.event,
-                "broadcast" : False,
-                "data" : {
-                    'playerName': current_player.name,
-                    'hand': self._handsToStrList(sum(current_player.hand.hand, [])),
-                    'trickNum': self.trickNum+1,
-                    'trickSuit': self.currentTrick.suit.__str__(),
-                    'currentTrick': self._getCurrentTrickStrList(),
-                    'contrat': self.contrat,
-                    'suit': self.atout_suit
+        self.event_data_for_client = {
+            "event_name": self.event,
+            "broadcast": False,
+            "data": {
+                'playerName': current_player.name,
+                'hand': self._handsToStrList(sum(current_player.hand.hand, [])),
+                'trickNum': self.trickNum+1,
+                'trickSuit': self.currentTrick.suit.__str__(),
+                'currentTrick': self._getCurrentTrickStrList(),
+                'contrat': self.contrat,
+                'suit': self.atout_suit
                 }
             }
 
@@ -341,41 +348,41 @@ class CoincheEnv(Env):
         shift = self.event_data_for_server['shift']
         current_player_i = (self.trickWinner + shift)%4
         current_player = self.players[current_player_i]
-        addCard = current_player.play(action_data['data']['action']['card'])
+        add_card = current_player.play(action_data['data']['action']['card'])
 
         if shift==0:
-            self.currentTrick.setTrickSuit(addCard) 
+            self.currentTrick.setTrickSuit(add_card)
         # If suit is atout, you must go higher if you can
-        if (addCard is not None and 
-            addCard.suit == Suit(self.atout_suit) and 
+        if (add_card is not None and
+            add_card.suit == Suit(self.atout_suit) and
             self.currentTrick.suit == Suit(self.atout_suit)):
         
             if (current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
-                atout_rank[addCard.rank.rank] < self.currentTrick.highest_rank):
+                atout_rank[add_card.rank.rank] < self.currentTrick.highest_rank):
                 print("Must put a higher atout")
-                addCard = None
+                add_card = None
                 
             # player tries to play off suit but has trick suit
-            if addCard is not None and addCard.suit != self.currentTrick.suit:
-                if current_player.hasSuit(self.currentTrick.suit):
-                    print ("Must play the suit of the current trick.")
-                    addCard = None
-                elif current_player.hasAtout(Suit(self.atout_suit)) and addCard.suit != Suit(self.atout_suit):
-                    print ("Must play Atout.")
-                    addCard = None
-                elif (current_player.hasAtout(Suit(self.atout_suit)) and
-                      addCard.suit == Suit(self.atout_suit)):
-                    # Player can play a higher atout but doesn't do so --> forced to play a higher atout
-                    if (self.currentTrick.highest_is_atout and
-                        current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
-                        atout_rank[addCard.rank.rank] < self.currentTrick.highest_rank):
-                        print("Must put a higher atout")
-                        addCard = None
+        if add_card is not None and add_card.suit != self.currentTrick.suit:
+            if current_player.hasSuit(self.currentTrick.suit):
+                print ("Must play the suit of the current trick.")
+                add_card = None
+            elif current_player.hasAtout(Suit(self.atout_suit)) and add_card.suit != Suit(self.atout_suit):
+                print ("Must play Atout.")
+                add_card = None
+            elif (current_player.hasAtout(Suit(self.atout_suit)) and
+                  add_card.suit == Suit(self.atout_suit)):
+                # Player can play a higher atout but doesn't do so --> forced to play a higher atout
+                if (self.currentTrick.highest_is_atout and
+                    current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
+                    atout_rank[add_card.rank.rank] < self.currentTrick.highest_rank):
+                    print("Must put a higher atout")
+                    add_card = None
 
 
-        if addCard is not None:
-            current_player.removeCard(addCard)
-            self.currentTrick.addCard(addCard, current_player_i, Suit(self.atout_suit))
+        if add_card is not None:
+            current_player.removeCard(add_card)
+            self.currentTrick.addCard(add_card, current_player_i, Suit(self.atout_suit))
             self.event_data_for_server['shift'] += 1
             self.event = 'ShowTrickAction'
             self._event_ShowTrickAction()
@@ -390,7 +397,7 @@ class CoincheEnv(Env):
         self.renderInfo['Msg'] = "\n" + self._printCurrentTrick()
         self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
         self.event_data_for_client \
-        =   { "event_name" : self.event,
+        =   { "event_name": self.event,
                 "broadcast" : True,
                 "data" : {
                     'trickNum': self.trickNum+1,
@@ -567,6 +574,10 @@ class CoincheEnv(Env):
             self._event_ShowPlayerHand()
 
         elif self.event == 'ChooseContrat' or self.event == 'ChooseContratAction':
+            print("clubs = 0")
+            print("diamonds = 1")
+            print("spades = 2")
+            print("hearts = 3")
             if action_data != None:
                 self._event_ChooseContratAction(action_data)
             else:
@@ -582,8 +593,8 @@ class CoincheEnv(Env):
                 if self.event == 'PlayTrick':
                     self._event_PlayTrick()
                 elif self.event == 'ShowTrickEnd':
-                    self._event_ShowTrickEnd()
                     reward = self._countTrickValue()
+                    self._event_ShowTrickEnd()
 
         
         elif self.event == 'RoundEnd':

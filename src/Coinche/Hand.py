@@ -22,7 +22,6 @@ class Hand:
         self.hand = [self.clubs, self.diamonds,
                     self.spades, self.hearts]
 
-#         self.contains2ofclubs = False
 
     def size(self):
         return len(self.clubs) + len(self.diamonds) + len(self.spades) + len(self.hearts)
@@ -43,8 +42,6 @@ class Hand:
     
     def addCard(self, card):
         if card.suit == Suit(clubs):
-#             if card.rank.rank == 2:
-#                 self.contains2ofclubs = True
             self.clubs.append(card)
         elif card.suit == Suit(diamonds):
             self.diamonds.append(card)
@@ -148,10 +145,6 @@ class Hand:
                 # print "Removing:", c.__str__()
                 self.hand[card.suit.iden].remove(c)
                 self.updateHand()
-
-    def hasOnlyHearts(self): # Let's Heart is l'atout
-        return len(self.hearts) == self.size()
-
 
 
     def __str__(self):
