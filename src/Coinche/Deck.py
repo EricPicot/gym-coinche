@@ -22,8 +22,11 @@ class Deck:
     def shuffle(self):
         rand.shuffle(self.deck, rand.random)
 
-    def deal(self):
-        return self.deck.pop(0)
+    def deal(self, numberOfCardsToDeal):
+        cards = []
+        for i in range(numberOfCardsToDeal):
+            cards += [self.deck.pop(0)]
+        return cards
 
     def sort(self):
         self.deck.sort()

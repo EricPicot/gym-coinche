@@ -105,15 +105,23 @@ class CoincheEnv(Env):
             if p.hand.contains2ofclubs:
                 self.trickWinner = i
 
-    def _dealCards(self):
+    def _dealCards(self, dealer):
         """
         This function deals the deck
         TODO: deal card the coinche way !!!
         """
-        i = 0
-        while(self.deck.size() > 0):
-            self.players[i % len(self.players)].addCard(self.deck.deal())
-            i += 1
+        i = dealer + 1 # Dealer doesn't deal himself first
+#         while(self.deck.size() > 0):
+#             self.players[i % len(self.players)].addCard(self.deck.deal())
+#             i += 1
+        '''3-3-2 Dealing'''
+        legalDealingSequences = [[3,3,2], [3,2,3]] #Defining academic dealing sequences
+        dealingSequence = legalDealingSequences[random.randint(0,1)] # Flipping a coin to choose the Dealing Sequence
+        for cardsToDeal in dealingSequence:
+            deck_size = self.deck.size() # Size of the deck before i-th round of dealing
+            while(self.deck.size() > deck_size - 4*cardsToDeal): #Stopping condition on one round
+                self.players[i % len(self.players)].addCards(self.deck.deal(cardsToDeal))
+                i += 1
 
     def _evaluateTrick(self):
         self.trickWinner = self.currentTrick.winner
@@ -192,7 +200,7 @@ class CoincheEnv(Env):
             p.resetRound()
             p.discardTricks()
 
-        self._dealCards()
+        self._dealCards(self.dealer)
         self.currentTrick = Trick()
         
         self.atout_suit = -1

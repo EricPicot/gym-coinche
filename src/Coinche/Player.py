@@ -15,8 +15,8 @@ class Player:
         """ Return True if the player has in his hand a higher atout than the current higher attout in the trick"""
         return self.hand.highestAtoutRank(atout_suit) > currentHighestAtout
 
-    def addCard(self, card):
-        self.hand.addCard(card)
+    def addCards(self, cards):
+        self.hand.addCards(cards)
 
     def play(self, card):
         return self.hand.playCard(card)
