@@ -33,3 +33,19 @@ class Deck:
 
     def addCards(self, cards):
         self.deck += cards
+        
+    def addTrick(self, trick):
+        for card in trick:
+            self.deck.addCards(card)
+            
+    def joinTeamsSubDecks(self, teamA, teamB):
+        self.deck = teamA.cardsInRound + teamB.cardsInRound
+    
+    def joinTeamsHands(self, teamA, teamB):
+        self.deck = teamA.cardsInHand + teamB.cardsInHand
+        
+    def cutDeck(self):
+        '''Randomly cuts the deck'''
+        cut = rand.randint(2, len(self.deck)-3)
+        self.deck = self.deck[-cut:] + self.deck[0:len(self.deck) - cut]
+        

@@ -7,7 +7,7 @@ class Player:
             self.hand = Hand()
             self.score = 0
             self.tricksWon = []
-            self.CardsInRound = []
+            self.cardsInRound = []
             self.team = None
             self.teammate = None
             
@@ -23,7 +23,7 @@ class Player:
 
 
     def trickWon(self, cards):
-        self.CardsInRound += cards
+        self.cardsInRound += cards
 
     def hasAtout(self, atout):
         return len(self.hand.hand[atout.iden]) > 0
@@ -53,7 +53,8 @@ class Team:
         self.score = 0
         self.globalScore = 0
         self.tricksWon = []
-        self.CardsInRound = []
+        self.cardsInRound = []
+        self.cardsInHand = []
         
 
     def updateRoundScore(self):
@@ -63,9 +64,17 @@ class Team:
         self.tricksWon = []
 
     def resetRoundCards(self):
-        self.CardsInRound = []
+        self.cardsInRound = []
 
     def teamScore(self):
         return None
+    
+    def joinCards(self):
+        '''Concatenates cards won by each player of the team during round'''
+        self.cardsInRound = self.player1.cardsInRound + self.player2.cardsInRound
+        
+    def joinHands(self):
+        '''Concatenates 16 cards from a team's hands '''
+        self.cardsInHand = [c for suit in self.player1.hand.hand for c in suit] + [c for suit in self.player2.hand.hand for c in suit]
 
         
