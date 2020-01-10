@@ -40,21 +40,22 @@ class Hand:
                 rank = atout_rank[card.rank.rank]
         return rank
     
-    def addCard(self, card):
-        if card.suit == Suit(clubs):
-            self.clubs.append(card)
-        elif card.suit == Suit(diamonds):
-            self.diamonds.append(card)
-        elif card.suit == Suit(spades):
-            self.spades.append(card)
-        elif card.suit == Suit(hearts):
-            self.hearts.append(card)
-        else:
-            print ('Invalid card')
+    def addCards(self, cardsToAdd):
+        for card in cardsToAdd:
+            if card.suit == Suit(clubs):
+                self.clubs.append(card)
+            elif card.suit == Suit(diamonds):
+                self.diamonds.append(card)
+            elif card.suit == Suit(spades):
+                self.spades.append(card)
+            elif card.suit == Suit(hearts):
+                self.hearts.append(card)
+            else:
+                print ('Invalid card')
 
         if self.size() == 8:
-            for suit in self.hand:
-                suit.sort()
+                for suit in self.hand:
+                    suit.sort()
 
     def updateHand(self):
         self.hand = [self.clubs, self.diamonds,

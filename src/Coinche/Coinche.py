@@ -20,6 +20,7 @@ class CoincheEnv(Env):
         self.maxScore = maxScore
         
         self.roundNum = 0
+        self.deck = Deck()
         self.trickNum = 0  # initialization value such that first round is round 0
         self.dealer = -1  # so that first dealer is 0
         self.passes = [1, -1, 2, 0]  # left, right, across, no pass
@@ -54,9 +55,9 @@ class CoincheEnv(Env):
         Player physical locations:
         Game runs clockwise
 
-            p3
+             p3
         p2        p4
-            p1
+             p1
 
         '''
         
@@ -104,15 +105,23 @@ class CoincheEnv(Env):
             if p.hand.contains2ofclubs:
                 self.trickWinner = i
 
-    def _dealCards(self):
+    def _dealCards(self, dealer):
         """
         This function deals the deck
         TODO: deal card the coinche way !!!
         """
-        i = 0
-        while(self.deck.size() > 0):
-            self.players[i % len(self.players)].addCard(self.deck.deal())
-            i += 1
+        i = dealer + 1 # Dealer doesn't deal himself first
+#         while(self.deck.size() > 0):
+#             self.players[i % len(self.players)].addCard(self.deck.deal())
+#             i += 1
+        '''3-3-2 Dealing'''
+        legalDealingSequences = [[3,3,2], [3,2,3]] #Defining academic dealing sequences
+        dealingSequence = legalDealingSequences[random.randint(0,1)] # Flipping a coin to choose the Dealing Sequence
+        for cardsToDeal in dealingSequence:
+            deck_size = self.deck.size() # Size of the deck before i-th round of dealing
+            while(self.deck.size() > deck_size - 4*cardsToDeal): #Stopping condition on one round
+                self.players[i % len(self.players)].addCards(self.deck.deal(cardsToDeal))
+                i += 1
 
     def _evaluateTrick(self):
         self.trickWinner = self.currentTrick.winner
@@ -180,8 +189,9 @@ class CoincheEnv(Env):
     
     def _event_NewRound(self):
 
-        self.deck = Deck()
-        self.deck.shuffle()
+        self.round += 1
+        if self.roundNum==0:
+            self.deck.shuffle()
         self.roundNum += 1
         self.trickNum = 0
         self.trickWinner = -1
@@ -190,9 +200,9 @@ class CoincheEnv(Env):
             p.resetRound()
             p.discardTricks()
 
-        self._dealCards()
+        self._dealCards(self.dealer)
         self.currentTrick = Trick()
-        self.round += 1
+        
         self.atout_suit = -1
         self.contrat = 0
         self.leadingTeam = None
@@ -323,7 +333,7 @@ class CoincheEnv(Env):
         print("shift", shift, "trickNum", self.trickNum)
         if self.trickNum == 0 and shift == 0:
             
-            current_player = self.players[self.dealer + 1]
+            current_player = self.players[(self.dealer + 1)%4]
             
         else:
             current_player_i = (self.trickWinner + shift)%4
@@ -512,6 +522,19 @@ class CoincheEnv(Env):
         reward = {}
         for current_player_i in range(len(self.players)):
             reward[self.players[current_player_i].name] = roundScore_list_for_players[current_player_i]
+            
+        '''Rebuild Deck from tricks collected by each player'''
+        #Gathering Each Team's tricks
+        for t in self.teams:
+            t.joinCards()
+            t.joinHands()
+        if (self.teams[0].cardsInRound!=[]) | (self.teams[1].cardsInRound!=[]):  #If round was played (not everybody passed)
+            self.deck.joinTeamsSubDecks(self.teams[0], self.teams[1])
+            
+        else : #Else, Gather back hands
+            self.deck.joinTeamsHands(self.teams[0], self.teams[1])
+        
+        self.deck.cutDeck() #Then cut
         return reward
         
     def _event_GameOver(self):

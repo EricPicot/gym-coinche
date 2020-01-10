@@ -1,4 +1,5 @@
 from .Card import Suit, Card, Rank
+# Defining atout_rank, generic_values, atout_values
 from .CardsOrder import *
 hearts = 3 # the corresponding index to the suit hearts
 spades = 2
@@ -57,7 +58,7 @@ class Trick:
                     self.highest_rank = atout_rank[card.rank.rank]
                     self.highest = atout_values[card.rank.rank]
                     self.winner = index
-            # Is the atout  better than a previous atout
+            # Is the atout  better than a previous atout. Comparing Values and than Ranks are the same among a suit or among atouts
         if not self.highest_is_atout:
 
             if card.suit == self.suit:
