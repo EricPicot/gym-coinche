@@ -14,7 +14,7 @@ class Human:
                             "value":  int(observation["data"]["contrat"]),
                             "newContrat": False}
             print('current contrat: ', contrat_dict)
-
+            print("To pass, just press twice 'enter'")
             suit = input('suit of the new contrat: ')
             contrat = input('value of the new contrat: ')
             if suit != "":
@@ -22,13 +22,6 @@ class Human:
                 contrat_dict["newContrat"]=True
                 contrat_dict["suit"] = int(suit)
                 contrat_dict["value"] = int(contrat)
-                while former_value >= contrat_dict["value"]:
-                    print("you must increase the value of the proposed contrat")
-                    contrat_dict["value"] = input('value of the new contrat: ')
-
-                while contrat_dict["value"]%10 != 0:
-                    print("Must choose a multiple of 10")
-                    contrat_dict["value"] = input('value of the new contrat: ')
             print(contrat_dict)
             return {
                     "event_name" : "ChooseContratAction",

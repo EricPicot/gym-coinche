@@ -1,6 +1,6 @@
 import random
 from datetime import datetime
-max_value = 8
+max_value = 11
 
 
 class RandomAI:
@@ -30,20 +30,20 @@ class RandomAI:
             print('current contrat: ', contrat_dict)
 #           Choose if RandomAI makes a call:
             make_a_call = random.uniform(0, 1) >= 0.75
-            if not make_a_call or former_value == 160:
+
+            # If no bet or upper limit of bid already reached
+            if not make_a_call or former_value == max_value*10:
                 suit = ""
                 contrat = ""
             else:
                 suit = random.randint(0, 3)
                 contrat = random.randint(8, max_value)*10
-            if suit != "" and former_value < 80:
-
+                # you must return "newContrat=True" if you change the value of the contrat
                 contrat_dict["newContrat"] = True
                 contrat_dict["suit"] = int(suit)
                 contrat_dict["value"] = int(contrat)
-                while former_value >= contrat_dict["value"]:
-                    contrat_dict["value"] = random.randint(former_value/10, 16)*10
 
+                print('New contrat: ', contrat_dict)
             return {
                     "event_name": "ChooseContratAction",
                     "data": {
@@ -54,15 +54,10 @@ class RandomAI:
 
         elif observation['event_name'] == 'ChooseContrat':
             print(observation)
-            contrat_dict = {"suit":None,
+            contrat_dict = {"suit": None,
                             "value": None}
             for i, key in enumerate(contrat_dict):
-                contrat_dict[key] = input('{0}: '.format(key
-                                                        ))
-                if key == "value":
-                    while contrat_dict[key]%10!=0:
-                        print("Must choose a multiple of 10")
-                        contrat_dict[key] = input('{0}: '.format(key))
+                contrat_dict[key] = input('{0}: '.format(key))
 
             print('contrat: ', contrat_dict)
             return {
@@ -72,6 +67,7 @@ class RandomAI:
                         'action': {'ChooseContrat': contrat_dict}
                     }
                 }
+
         elif observation['event_name'] == 'PassCards':
             if self.print_info:
                 print(observation)

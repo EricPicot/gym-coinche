@@ -278,10 +278,34 @@ class CoincheEnv(Env):
                 }
 
 
+    def _assert_new_contrat(self, actionData):
+        proposed_contrat = actionData["data"]["action"]["value"]
+        is_bidding = actionData["data"]["action"]["newContrat"]
+        if not is_bidding:
+            # The player is not making any announce
+            return True
+        else:
+            if proposed_contrat%10:
+                self.announce_error = "Contrat value must be a multiple of 10"
+                return False
+            if proposed_contrat<80:
+                self.announce_error = "Contrat value must be greater than 80"
+                return False
+            if proposed_contrat <= self.contrat:
+                self.announce_error = "Contrat must be greater than current contrat"
+                return False
+            #180 if there is "Belote&Rebelote"
+            if proposed_contrat > 180 and proposed_contrat < 250:
+                self.announce_error = "Current contrat value doesn't exist. Announce capo (250) or max 180 !"
+                return False
+            else:
+                return True
+
+
     def _event_ChooseContratAction(self, actionData):
         
         shift = self.event_data_for_server['shift']
-        
+        player_must_announce_again = False
         if shift == 0 and self.numTurnOfAnnounce==0:
             self.playerToStartAnnounce = (self.dealer + 1)%4
             self.current_player_i = self.playerToStartAnnounce
@@ -291,40 +315,54 @@ class CoincheEnv(Env):
             self.current_player_i = (self.playerToStartAnnounce+shift) % 4
             self.current_player = self.players[self.current_player_i]
 
-        self.contrat = actionData["data"]["action"]["value"]
-        self.atout_suit = actionData["data"]["action"]["suit"]
-        
-#         if there is a modification of the previous contrat, new turn of announce starting after the current player
-        if actionData["data"]["action"]["newContrat"]:
-            self.playerToStartAnnounce = self.current_player_i
-            self.numTurnOfAnnounce = 1
-            self.event_data_for_server['shift'] =0
-            self.leadingTeam = self.current_player.team.teamNumber
-
-            
-        if self.event_data_for_server['shift'] <3:
-
-            self.event_data_for_server['shift'] += 1
+        # If new contrat proposed isn't valid
+        if not self._assert_new_contrat(actionData):
+            print(self.announce_error)
+            player_must_announce_again =True
+            actionData["data"]["action"]["value"] = None
+            actionData["data"]["action"]["suit"] = None
+            actionData["newContrat"]=False
             self.event = "ChooseContrat"
             self._event_ChooseContrat()
+
         else:
-            
-            self.event_data_for_server['shift'] += 1
-            if self.contrat == 0 and self.atout_suit== -1:
-                self.renderInfo['printFlag'] = True
+            self.contrat = actionData["data"]["action"]["value"]
+            self.atout_suit = actionData["data"]["action"]["suit"]
+        # If the player as passed or made a valid announce
+        if not player_must_announce_again:
+            # if the player made a valid announce
+            if  actionData["data"]["action"]["newContrat"]:
+#         if there is a modification of the previous contrat, new turn of announce starting after the current player
+                self.playerToStartAnnounce = self.current_player_i
+                self.numTurnOfAnnounce = 1
+                self.event_data_for_server['shift'] =0
+                self.leadingTeam = self.current_player.team.teamNumber
 
-                self.renderInfo['Msg'] += "everybody passed - New round is comming"
 
-                self.event = 'RoundEnd'
+            if self.event_data_for_server['shift'] <3:
+
+                self.event_data_for_server['shift'] += 1
+                self.event = "ChooseContrat"
                 self._event_ChooseContrat()
-                self.event_data_for_server = {}
-    
-            # if everyone had the opportunity to announce, let's play !
+
             else:
-                self.event = 'PlayTrick'
-                self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
-                self._event_PlayTrick()
-      
+
+                self.event_data_for_server['shift'] += 1
+                if self.contrat == 0 and self.atout_suit== -1:
+                    self.renderInfo['printFlag'] = True
+
+                    self.renderInfo['Msg'] += "everybody passed - New round is comming"
+
+                    self.event = 'RoundEnd'
+                    self._event_ChooseContrat()
+                    self.event_data_for_server = {}
+
+                # if everyone had the opportunity to announce, let's play !
+                else:
+                    self.event = 'PlayTrick'
+                    self.renderInfo['Msg'] += 'Leading team: {0}\n'.format(self.leadingTeam)
+                    self._event_PlayTrick()
+
             
             
     def _event_PlayTrick(self):
