@@ -94,12 +94,9 @@ class RandomAI:
                 print(observation)
 
             hand = observation['data']['hand']
-            if '2c' in hand:
-                choose_card = '2c'
-            else:
-                choose_card = random.choice(observation['data']['hand'])
-                if self.print_info:
-                    print(self.name, ' choose card: ', choose_card)
+            choose_card = random.choice(hand)
+            if self.print_info:
+                print(self.name, ' choose card: ', choose_card)
 
             return {
                     "event_name" : "PlayTrick_Action",

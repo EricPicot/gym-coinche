@@ -38,7 +38,7 @@ class Player:
         self.tricksWon = []
 
     def resetRound(self):
-        self.CardsInRound = []
+        self.cardsInRound = []
         self.hand = Hand()
         self.score = 0
 
