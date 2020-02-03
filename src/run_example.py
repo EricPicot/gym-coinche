@@ -4,8 +4,8 @@ from Coinche import *
 from Agent.human import Human
 from Agent.randomAI import RandomAI
 
-NUM_EPISODES = 2
-MAX_SCORE = 10
+NUM_EPISODES = 5
+MAX_SCORE = 1000
 
 playersNameList = ['Nord', 'Est', 'Sud', 'Ouest']
 agent_list = [0, 0, 0, 0]
