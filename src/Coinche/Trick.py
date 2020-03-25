@@ -16,28 +16,43 @@ class Trick:
         self.highest_is_atout = False
         self.highest_rank = 0
 
-
-    def reset(self):
-        self.trick = [Card(0,-1), Card(0,-1), Card(0,-1), Card(0,-1)]
-#         self.trick = [0, 0, 0, 0]
-        self.suit = -1
-        self.cardsInTrick = 0
-        self.highest = 0
-        self.winner = -1
-        self.highest_is_atout = False
-        self.highest_rank = 0
-
-    # def cardsInTrick(self):
-    #     count = 0
-    #     for card in self.trick:
-    #         if card is not 0:
-    #             count += 1
-    #     return count
-
     def setTrickSuit(self, card):
         self.suit = card.suit
 
-    def addCard(self, card, index, atout_suit):
+    def _assert_valid_play(self, add_card, current_player):
+
+        # If suit is atout, you must go higher if you can
+        if (add_card is not None and
+                add_card.suit == Suit(self.atout_suit) and
+                self.currentTrick.suit == Suit(self.atout_suit)):
+
+            if (current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
+                    atout_rank[add_card.rank.rank] < self.currentTrick.highest_rank):
+                print("Must put a higher atout")
+                add_card = None
+
+            # player tries to play off suit but has trick suit
+        if add_card is not None and add_card.suit != self.currentTrick.suit:
+            if current_player.hasSuit(self.currentTrick.suit):
+                print("Must play the suit of the current trick.")
+                add_card = None
+            elif current_player.hasAtout(Suit(self.atout_suit)) and add_card.suit != Suit(self.atout_suit):
+                print("Must play Atout.")
+                add_card = None
+            elif (current_player.hasAtout(Suit(self.atout_suit)) and
+                  add_card.suit == Suit(self.atout_suit)):
+                # Player can play a higher atout but doesn't do so --> forced to play a higher atout
+                if (self.currentTrick.highest_is_atout and
+                        current_player.hasHigherAtout(self.atout_suit, self.currentTrick.highest_rank) and
+                        atout_rank[add_card.rank.rank] < self.currentTrick.highest_rank):
+                    print("Must put a higher atout")
+                    add_card = None
+        return add_card
+
+
+    # TODO: check compatibility of adding "car" based on current trick + player_hand
+    # otherwise raise an exception
+    def addCard(self, card, player_hand):
         if self.cardsInTrick == 0: # if this is the first card added, set the trick suit
             self.setTrickSuit(card)
             #print ('Current trick suit:', self.suit)

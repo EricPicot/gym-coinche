@@ -17,6 +17,7 @@ class Player:
 
     def addCards(self, cards):
         self.hand.addCards(cards)
+        self.hand.updateHand()
 
     def play(self, card):
         return self.hand.playCard(card)
@@ -42,6 +43,18 @@ class Player:
         self.hand = Hand()
         self.score = 0
 
+    def is_ai(self):
+        return False
+
+
+class RandomPlayer(Player):
+    def getRandom(self):
+        return self.hand.getRandomCard()
+
+
+class AIPlayer(Player):
+    def is_ai(self):
+        return True
 
     
 class Team:
