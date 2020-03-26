@@ -1,13 +1,11 @@
 from random import randint
 from .Card import Suit
-from.CardsOrder import atout_rank
 
 clubs = 0
 diamonds = 1
 spades = 2
 hearts = 3
 suits = ["c", "d", "s", "h"]
-
 
 
 class Hand:
@@ -20,26 +18,25 @@ class Hand:
         
         # create hand of cards split up by suit
         self.hand = [self.clubs, self.diamonds,
-                    self.spades, self.hearts]
-
+                     self.spades, self.hearts]
 
     def size(self):
         return len(self.clubs) + len(self.diamonds) + len(self.spades) + len(self.hearts)
-    
-    def highestAtoutRank(self, atout_suit):
-        suit_cards = self.hand[atout_suit]            #If player has some atouts
-        if len(suit_cards)==0:
-            return 0
-        else:
-            return self.getMaxRankOfSuit(suit_cards)
-                
-    def getMaxRankOfSuit(self, suit):
+
+    def hasHigherCard(self, suit, suit_rank, current_highest_card):
+        suit_cards = self.hand[suit]
         rank = 0
-        for card in suit:
-            if atout_rank[card.rank.rank] > rank:
-                rank = atout_rank[card.rank.rank]
-        return rank
-    
+        for card in suit_cards:
+            if suit_rank[card.rank.rank] > rank:
+                rank = suit_rank[card.rank.rank]
+        return rank > current_highest_card
+
+    def hasAtout(self, atout):
+        return len(self.hand[atout.iden]) > 0
+
+    def hasSuit(self, suit):
+        return len(self.hand[suit.iden]) > 0
+
     def addCards(self, cardsToAdd):
         for card in cardsToAdd:
             if card.suit == Suit(clubs):

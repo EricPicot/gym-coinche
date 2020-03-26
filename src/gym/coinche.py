@@ -3,11 +3,7 @@ from gym import Env
 
 
 class GymCoinche(Env):
-    def __init__(self, color, value, players):
-        self.color = color
-        self.value = value
-
-
+    def __init__(self):
         self.observation_space = space.Box()
         self.action_space = space.Box()
 
@@ -15,8 +11,15 @@ class GymCoinche(Env):
             RandomPlayer("N"), RandomPlayer("E"), AIPlayer("S"), RandomPlayer("W")
         ]
         self.deck = Deck()
+        self.trick = None
+        self.color = None
+        self.value = None
 
     def reset(self):
+        # Select color and value
+        self.color = None
+        self.value = None
+
         self.deck.shuffle()
         # TODO: deal for players in Deck
         # [ [card, card, card, card], [], [], [] ]
@@ -35,13 +38,14 @@ class GymCoinche(Env):
                 break
 
             # add random card
-            while True:
-                card = p.getRandom()
-                try:
-                    self.trick.addCard(card)
-                    break
-                except Exception:
-                    pass
+            if isinstance(p, RandomPlayer):
+                while True:
+                    card = p.getRandom()
+                    try:
+                        self.trick.addCard(card)
+                        break
+                    except PlayException:
+                        pass
 
             # add random card
             probabilities = []  # shape(32)
