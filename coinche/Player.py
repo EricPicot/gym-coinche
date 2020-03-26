@@ -1,4 +1,4 @@
-from .Hand import Hand
+from coinche.Hand import Hand
 
 
 class Player:

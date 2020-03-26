@@ -1,8 +1,8 @@
-from .Deck import Deck
-from .Card import Card, Suit, Rank
-from .Player import Player, Team
-from .Trick import Trick
-from .CardsOrder import *
+from coinche.Deck import Deck
+from coinche.Card import Card, Suit, Rank
+from coinche.Player import Player, Team
+from coinche.Trick import Trick
+from coinche.CardsOrder import *
 import random
 from gym import Env
 
@@ -65,7 +65,7 @@ class CoincheEnv(Env):
         self.renderInfo = {'printFlag': False, 'Msg': ""}
 
     def _countTrickValue(self):
-        """ 
+        """
         This function computes the value of the trick given if the cards are atout cards or not
         ex:
         if atout_suit is heart and the trick is [Ad, Td, 9h, 7d]:

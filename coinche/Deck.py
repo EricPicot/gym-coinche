@@ -1,6 +1,6 @@
 import random as rand
 
-from .Card import Card
+from coinche.Card import Card
 
 numSuits = 4
 minRank = 7

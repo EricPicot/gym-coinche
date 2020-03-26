@@ -1,6 +1,6 @@
-from .Card import Suit, Card, Rank
-from .CardsOrder import atout_rank, generic_values, atout_values
-from .exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurrentSuit, MustPlayAtout
+from coinche.Card import Suit, Card, Rank
+from coinche.CardsOrder import atout_rank, generic_values, atout_values
+from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurrentSuit, MustPlayAtout
 
 
 class Trick:

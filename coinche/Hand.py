@@ -1,5 +1,5 @@
 from random import randint
-from .Card import Suit
+from coinche.Card import Suit
 
 clubs = 0
 diamonds = 1

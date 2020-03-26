@@ -1,6 +1,6 @@
 import gym
 
-from Coinche import *
+from coinche import *
 from Agent.human import Human
 from Agent.randomAI import RandomAI
 
