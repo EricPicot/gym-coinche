@@ -2,7 +2,8 @@ from coinche.Hand import Hand
 
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, index, name):
+        self.index = index
         self.name = name
         self.hand = Hand()
         self.score = 0

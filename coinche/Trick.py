@@ -84,3 +84,6 @@ class Trick:
         if self.trick_number == 7:
             trick_value += 10
         return trick_value
+
+    def is_done(self):
+        return self.cardsInTrick >= 4
