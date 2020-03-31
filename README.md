@@ -8,16 +8,22 @@ A round of Coinche could be divided into two distinct parts:
 - First, given their hand, players propose a contrat (number of points to do + the suit)
 - Secondly, the players play heigh tricks
 
+
+
 ## Objectif of the project
 
-We want to apply Reinforcement Learning to Coinche. To begin, we'll focus on the second phase of a round. 
-Players we'll be provided their eight cards' game and a contrat.
-The AI player will then have to both learn the rules and some strategy
+We want to apply Reinforcement Learning to Coinche. **To begin, we'll focus only on the second phase of a round. 
+Players we'll be provided their eight cards' game and a contrat.**
+The AI player will then have to both learn the rules and some strategies
+
+One of the issue that we are facing would be the possibility to have the AI playing a card while it is not allow given the context. To prevent such position, we chose to deliver as output of the AI a vector of probability rather than a card. Therefore if the AI favors a card that can't be played, the gym envirronment will do a mask on the possible strokes and select the highest probability card favored by the AI
 
 
 ## Installation
 
-We use the framework Gym linked with RL Coach
+We use the framework [gym](http://gym.openai.com/docs/) linked with [RL Coach](http://gym.openai.com/docs/) that provides deep learning algorithm.
+
+Gym envirronment takes care of the game in itself (rules, rounds) and provide standard outputs to reiforcement learning algorithms based on steps
 
 
 ```
