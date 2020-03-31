@@ -1,3 +1,4 @@
+from random import randint
 from coinche.Hand import Hand
 
 
@@ -11,6 +12,7 @@ class Player:
         self.cardsInRound = []
         self.team = None
         self.teammate = None
+        self.attacker = None
 
     def addCards(self, cards):
         self.hand.addCards(cards)
@@ -40,6 +42,22 @@ class Player:
 class RandomPlayer(Player):
     def getRandom(self):
         return self.hand.getRandomCard()
+
+class DeterministicPlayer(RandomPlayer):
+    def play_turn(self, trick):
+        # If player is the first to start
+        if trick.cardsInTrick == 0:
+            # If player is an attacker
+            if self.attacker == 1:
+                # Try to play Atout or play random card
+                if self.hand.hasAtout(trick.atout_suit):
+                    suit = self.hand[trick.atout_suit]
+                    index = randint(0, len(suit) - 1)
+                    return self.play(suit[index])
+                else:
+                    return self.getRandom()
+
+        return self.getRandom()
 
 
 class AIPlayer(Player):

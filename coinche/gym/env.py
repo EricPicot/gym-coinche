@@ -2,14 +2,14 @@ from coinche.Player import AIPlayer, RandomPlayer
 from coinche.Trick import Trick
 from coinche.Deck import Deck
 from coinche.exceptions import PlayException
-from gym import Env
+from gym import Env, spaces
 import numpy as np
 
 
 class GymCoinche(Env):
     def __init__(self):
-        self.observation_space = space.Box()
-        self.action_space = space.Box()
+        self.observation_space = spaces.Box()
+        self.action_space = spaces.Box()
 
         self.players = [
             RandomPlayer(0, "N"), RandomPlayer(1, "E"), AIPlayer(2, "S"), RandomPlayer(3, "W")
@@ -21,14 +21,38 @@ class GymCoinche(Env):
         self.trick_number = 0
         self.color = None
         self.value = None
+        # TODO: select randomly the attacker_team in {0,1}
+        self.attacker_team = 0
+
+        for p in self.players:
+            if self.attacker_team == 0:
+                if p.index % 2 == 0:
+                    p.attacker = 1
+                else:
+                    p.attacker = 0
+            elif self.attacker_team == 1:
+                if p.index % 2 == 1:
+                    p.attacker = 1
+                else:
+                    p.attacker = 0
 
     def reset(self):
+        """
+        reset is mandatory to use gym framework. Reset is called at the end of each round (8 tricks)
+        :return: observation
+        """
         self.play_reset()
         # TODO: create observation
         observation = []
         return observation
 
     def step(self, action):
+        """
+        step is mandatory to use gym framework
+        In each step, every player play exactly one, especially the AIPlayers.
+        :param action:
+        :return: observation, reward, done, info
+        """
         # TODO: play for ai
         self.play_step()
         # TODO: create observation
@@ -36,11 +60,30 @@ class GymCoinche(Env):
         return observation, reward, done, info
 
     def play_reset(self):
+        """
+        Function called in the reset function. Called at each new round. Once all the important values are reset, and
+        given the trick id (between 0 and 7) we define the first player of the first trick using np.roll.
+
+        :return:
+        """
         # Select color and value
         self.color = None
         self.value = None
         self.trick_number = 0
         self.round_number += 1
+        self.attacker_team = 0  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+
+        for p in self.players:
+            if self.attacker_team == 0:
+                if p.index % 2 == 0:
+                    p.attacker = 1
+                else:
+                    p.attacker = 0
+            elif self.attacker_team == 1:
+                if p.index % 2 == 1:
+                    p.attacker = 1
+                else:
+                    p.attacker = 0
 
         self.deck.shuffle()
         # TODO: deal for players in Deck
@@ -79,14 +122,22 @@ class GymCoinche(Env):
         return rotation
 
     def _play_until_end_of_rotation_or_ai_play(self):
+        """
+        When this method is called it is either:
+        - An AIPlayer's turn: therefore we break and ask the AIPlayer to give prediction
+        - Not an AIPlayer: therefore the current player just play given is deterministic (or random) policy
+
+        :return:
+        """
         while len(self.current_trick_rotation) > 0:
             p = self.current_trick_rotation.pop()
             if isinstance(p, AIPlayer):
                 break
 
-            # add random card
-            if isinstance(p, RandomPlayer):
+            # Ask not ai player to player (could be random)
+            if not isinstance(p, AIPlayer):
                 while True:
+                    # TODO: dev a deterministic player
                     card = p.getRandom()
                     try:
                         self.trick.addCard(card, p.hand, p.index)
