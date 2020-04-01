@@ -76,6 +76,11 @@ class Suit:
         return self.string
 
 
+CLUB = Suit(0)
+DIAMOND = Suit(1)
+SPADE = Suit(2)
+HEART = Suit(3)
+
 
 """Ranks indicated by numbers 2-14, 2-Ace"""
 """Where ace is high and two is low"""

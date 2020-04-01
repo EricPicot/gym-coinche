@@ -16,3 +16,7 @@ class MustPlayAtout(PlayException):
 
 class MustPlayACard(PlayException):
     pass
+
+
+class MustPlayHisCards(PlayException):
+    pass

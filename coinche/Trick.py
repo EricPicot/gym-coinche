@@ -1,6 +1,6 @@
 from coinche.Card import Suit, Card, Rank
-from coinche.CardsOrder import atout_rank, generic_values, atout_values
-from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurrentSuit, MustPlayAtout
+from coinche.CardsOrder import atout_rank, generic_rank, generic_values, atout_values
+from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurrentSuit, MustPlayAtout, MustPlayHisCards
 
 
 class Trick:
@@ -17,6 +17,9 @@ class Trick:
     def _assert_valid_play(self, card, player_hand):
         if card is None:
             raise MustPlayACard()
+
+        if not player_hand.hasCard(card):
+            raise MustPlayHisCards()
 
         # player tries to play off suit but has trick suit
         if card.suit != self.suit:
@@ -60,8 +63,8 @@ class Trick:
         # Comparing Values and than Ranks are the same among a suit or among atouts
         if not self.highest_is_atout:
             if card.suit == self.suit:
-                if card.rank.rank > self.highest_rank:
-                    self.highest_rank = card.rank.rank
+                if generic_rank[card.rank.rank] > self.highest_rank:
+                    self.highest_rank = generic_rank[card.rank.rank]
                     self.winner = player_index
 
     def score(self):
@@ -81,7 +84,7 @@ class Trick:
                 else:
                     trick_value += generic_values[card.rank.rank]
         # 10 de der
-        if self.trick_number == 7:
+        if self.trick_number == 8:
             trick_value += 10
         return trick_value
 

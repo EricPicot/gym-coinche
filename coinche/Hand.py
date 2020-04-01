@@ -23,6 +23,9 @@ class Hand:
     def size(self):
         return len(self.clubs) + len(self.diamonds) + len(self.spades) + len(self.hearts)
 
+    def hasCard(self, card):
+        return self.containsCard(card.rank(), card.suit())
+
     def hasHigherCard(self, suit, suit_rank, current_highest_card):
         suit_cards = self.hand[suit]
         rank = 0

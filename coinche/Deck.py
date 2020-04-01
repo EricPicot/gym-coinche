@@ -51,4 +51,3 @@ class Deck:
         '''Randomly cuts the deck'''
         cut = rand.randint(2, len(self.deck)-3)
         self.deck = self.deck[-cut:] + self.deck[0:len(self.deck) - cut]
-        
