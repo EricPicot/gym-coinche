@@ -9,8 +9,8 @@ maxRank = 15
 class Deck:
     def __init__(self):
         self.deck = []
-        for suit in range(0,numSuits):
-            for rank in range(minRank,maxRank):
+        for suit in range(0, numSuits):
+            for rank in range(minRank, maxRank):
                 self.deck.append(Card(rank, suit))
 
     def __str__(self):
@@ -47,7 +47,7 @@ class Deck:
     def joinTeamsHands(self, teamA, teamB):
         self.deck = teamA.cardsInHand + teamB.cardsInHand
         
-    def cutDeck(self):
+    def cut_deck(self):
         '''Randomly cuts the deck'''
         cut = rand.randint(2, len(self.deck)-3)
         self.deck = self.deck[-cut:] + self.deck[0:len(self.deck) - cut]

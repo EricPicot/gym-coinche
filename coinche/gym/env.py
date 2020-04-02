@@ -5,6 +5,7 @@ from coinche.Card import Card, Rank, Suit, HEART, SPADE, DIAMOND, CLUB
 from coinche.exceptions import PlayException
 from gym import Env, spaces
 import numpy as np
+import random
 
 
 class GymCoinche(Env):
@@ -25,7 +26,7 @@ class GymCoinche(Env):
         self.round_number = 0
         self.played_tricks = []
         self.trick = None
-        self.color = None
+        self.atout_suit = None
         self.value = None
         # TODO: select randomly the attacker_team in {0,1}
         self.attacker_team = 0
@@ -54,7 +55,9 @@ class GymCoinche(Env):
         current_player = self.current_trick_rotation[0]
         last_trick = self.played_tricks[-1]
         reward = self._get_trick_reward(last_trick, current_player)
-        info = {'winner': last_trick.winner}
+        winning_team = 0 if last_trick.winner % 2 == 0 else 1
+        info = {'winner': last_trick.winner,
+                'winning_team': winning_team}
         return observation, reward, done, info
 
     def _get_trick_reward(self, trick, player):
@@ -72,12 +75,15 @@ class GymCoinche(Env):
         # Select color and value
         self.round_number += 1
 
-        self.color = SPADE
-        self.value = 1
+        self.atout_suit = self.suits_order[random.randint(0, 3)]  # select randomly the suit
+        self.value = random.randint(1, 2)  # Can only announce 80 or 90 to begin with
+        self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+
         self.suits_order = self._define_suits_order(self.suits_order)
         # TODO: reuse played_tricks to create a new Deck
+        # We rebuild the deck based on previous trick won by each players
+        self._rebuild_deck()
         self.played_tricks = []
-        self.attacker_team = 0  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
 
         for p in self.players:
             if self.attacker_team == 0:
@@ -90,19 +96,36 @@ class GymCoinche(Env):
                     p.attacker = 1
                 else:
                     p.attacker = 0
+        #  -----
+        for p in self.players:
+            p.resetRound()
+            p.discardTricks()
 
-        # TODO: To use or not to use
-        self.deck.shuffle()
-        # TODO: deal for players in Deck
-        # [ [card, card, card, card], [], [], [] ]
-        cards = self.deck.deal()
-        players_round = np.roll(self.players, self.round_number)
-        for p, c in zip(players_round, cards):
-            p.addCards(c)
+        # -----
+        self._deal_cards()
 
-        self.trick = Trick(self.color, len(self.played_tricks) + 1)
+        self.trick = Trick(self.atout_suit, len(self.played_tricks) + 1)
         self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
         self._play_until_end_of_rotation_or_ai_play()
+
+    def _rebuild_deck(self):
+        # Ordering previous played tricks by players
+        ordered_deck = []
+        for p in self.players:
+            ordered_deck += [card for trick in self.played_tricks for card in trick if p.index == trick.winner]
+        self.deck = ordered_deck
+        self.deck.cut_deck()
+
+    def _deal_cards(self):
+        """
+        This function deals the deck
+        """
+        players_round = np.roll(self.players, self.round_number)
+        legalDealingSequences = [[3, 3, 2], [3, 2, 3]]  # Defining academic dealing sequences
+        dealingSequence = legalDealingSequences[random.randint(0, 1)]  # Choose the Dealing Sequence
+        for cardsToDeal in dealingSequence:
+            for p in players_round:  # Stopping condition on one round
+                p.addCards(self.deck.deal(cardsToDeal))
 
     def play_step(self, action):
         # TODO: play for ai
@@ -121,7 +144,7 @@ class GymCoinche(Env):
         if len(self.played_tricks) == 8:
             return True
 
-        self.trick = Trick(self.color, len(self.played_tricks) + 1)
+        self.trick = Trick(self.atout_suit, len(self.played_tricks) + 1)
         # Choose next starter
         self.current_trick_rotation = self._create_trick_rotation(winner)
         # Play until AI
@@ -215,7 +238,7 @@ class GymCoinche(Env):
     def _define_suits_order(self, suits_order):
         tmp_suits_order = suits_order
         while True:
-            if tmp_suits_order[0] == self.color:
+            if tmp_suits_order[0] == self.atout_suit:
                 break
             tmp_suits_order = np.roll(tmp_suits_order, 1)
         return tmp_suits_order

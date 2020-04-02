@@ -98,4 +98,5 @@ class Team:
         '''Concatenates 16 cards from a team's hands '''
         self.cardsInHand = [c for suit in self.player1.hand.hand for c in suit] + [c for suit in self.player2.hand.hand for c in suit]
 
-        
+
+
