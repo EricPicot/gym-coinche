@@ -136,7 +136,8 @@ class Hand:
 
         finalLen = self.size()
         # TODO: remove
-        assert finalLen == initLen - 1
+        if initLen != 1:
+            assert finalLen == initLen - 1
 
 
     def all_cards(self):

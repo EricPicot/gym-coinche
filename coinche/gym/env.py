@@ -122,12 +122,13 @@ class GymCoinche(Env):
         # Ordering previous played tricks by players
 
         # Check if duplicated cards
-        print("Number of distinct cards: ", len(set([card for trick in self.played_tricks for card in trick.trick ])))
         for p in self.players:
             for trick in self.played_tricks:
                 if p.index == trick.winner:
                     self.deck.addTrick(trick)
         self.deck.cut_deck()
+        # TODO: remove
+        # self.deck = Deck()
 
     def _deal_cards(self):
         """
@@ -170,7 +171,10 @@ class GymCoinche(Env):
         player_action_masked = player_cards_observation * action
 
         # Play cards in probability order
-        cards_index = np.argsort(-player_action_masked)
+        if np.max(player_action_masked)>0:
+            cards_index = np.argsort(-player_action_masked)
+        else:
+            cards_index = np.argsort(-player_cards_observation)
         for card_index in cards_index:
             try:
                 card_rank = (card_index % 8) + 7
@@ -178,6 +182,9 @@ class GymCoinche(Env):
                 card = Card(card_rank, self.suits_order[card_suit].iden)
                 # TODO: play_turn
                 self.trick.addCard(card, current_player.hand, current_player.index)
+                # print(card_index, card_suit,self.suits_order[card_suit].string, card_rank, self.atout_suit)
+                #
+                # print([(x.rank.rank, x.suit.string) for x in player_cards])
                 current_player.removeCard(card)
                 self.current_trick_rotation.pop(0)
                 return True
