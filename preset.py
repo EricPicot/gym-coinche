@@ -18,17 +18,18 @@ env_params = GymVectorEnvironment(level='coinche-v0')
 ####################
 # Graph Scheduling #
 ####################
-num_round_improve_steps = 80
-num_round_heatup = 8
-num_round_training = 300
-num_round_evaluation = 10
 num_tricks_in_round = 8
 
+num_round_improve_steps = 80 * num_tricks_in_round
+num_round_heatup = 8 * num_tricks_in_round
+num_round_training = 300 * num_tricks_in_round
+num_round_evaluation = 10 * num_tricks_in_round
+
 schedule_params = ScheduleParameters()
-schedule_params.improve_steps = EnvironmentSteps(num_round_improve_steps * num_tricks_in_round)
-schedule_params.heatup_steps = EnvironmentSteps(num_round_heatup * num_tricks_in_round)
-schedule_params.steps_between_evaluation_periods = EnvironmentSteps(num_round_training * num_tricks_in_round)
-schedule_params.evaluation_steps = EnvironmentSteps(num_round_evaluation * num_tricks_in_round)
+schedule_params.improve_steps = EnvironmentSteps(num_round_improve_steps)
+schedule_params.heatup_steps = EnvironmentSteps(num_round_heatup)
+schedule_params.steps_between_evaluation_periods = EnvironmentSteps(num_round_training)
+schedule_params.evaluation_steps = EnvironmentSteps(num_round_evaluation)
 
 ########################
 # Create Graph Manager #
