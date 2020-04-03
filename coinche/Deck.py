@@ -38,8 +38,7 @@ class Deck:
         self.deck += cards
         
     def addTrick(self, trick):
-        for card in trick:
-            self.deck.addCards(card)
+        self.deck += trick.trick
             
     def joinTeamsSubDecks(self, teamA, teamB):
         self.deck = teamA.cardsInRound + teamB.cardsInRound

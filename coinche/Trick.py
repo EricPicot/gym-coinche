@@ -6,7 +6,7 @@ from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurre
 class Trick:
     def __init__(self, atout_suit, trick_number):
         self.trick = [Card(0, -1), Card(0, -1), Card(0, -1), Card(0, -1)]
-        self.atout_suit = Suit(atout_suit)
+        self.atout_suit = atout_suit
         self.trick_number = trick_number
         self.suit = None
         self.cardsInTrick = 0

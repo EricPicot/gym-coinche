@@ -24,10 +24,10 @@ class Hand:
         return len(self.clubs) + len(self.diamonds) + len(self.spades) + len(self.hearts)
 
     def hasCard(self, card):
-        return self.containsCard(card.rank(), card.suit())
+        return self.containsCard(card.rank.rank, card.suit.iden)
 
     def hasHigherCard(self, suit, suit_rank, current_highest_card):
-        suit_cards = self.hand[suit]
+        suit_cards = self.hand[suit.iden]
         rank = 0
         for card in suit_cards:
             if suit_rank[card.rank.rank] > rank:
@@ -146,6 +146,9 @@ class Hand:
                 # print "Removing:", c.__str__()
                 self.hand[card.suit.iden].remove(c)
                 self.updateHand()
+
+    def all_cards(self):
+        return set([card for suit in self.hand for card in suit])
 
 
     def __str__(self):

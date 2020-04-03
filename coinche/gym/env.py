@@ -13,7 +13,8 @@ class GymCoinche(Env):
         # observation_space
         # 32 played cards + 32 player cards + 32 cards of current trick + contract_value + attacker
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
-        self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
+        # RL Coach observation_space has to be a Box
+        self.observation_space = spaces.Box(low=0, high=1, shape=(98,))
         # 32 cards
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
         self.action_space = spaces.Box(low=0, high=1, shape=(32,))
@@ -40,7 +41,7 @@ class GymCoinche(Env):
         :return: observation
         """
         self.play_reset()
-        observation = self._get_current_observation()
+        observation = self._get_trick_observation()
         return observation
 
     def step(self, action):
@@ -51,19 +52,29 @@ class GymCoinche(Env):
         :return: observation, reward, done, info
         """
         done = self.play_step(action)
-        observation = self._get_current_observation()
-        current_player = self.current_trick_rotation[0]
-        last_trick = self.played_tricks[-1]
-        reward = self._get_trick_reward(last_trick, current_player)
-        winning_team = 0 if last_trick.winner % 2 == 0 else 1
-        info = {'winner': last_trick.winner,
-                'winning_team': winning_team}
-        return observation, reward, done, info
+        if not done:
+            observation = self._get_trick_observation()
+            current_player = self.current_trick_rotation[0]
+            last_trick = self.played_tricks[-1]
+            reward = self._get_trick_reward(last_trick, current_player)
+            winning_team = 0 if last_trick.winner % 2 == 0 else 1
+            info = {'winner': last_trick.winner,
+                    'winning_team': winning_team}
+            return observation, reward, done, info
+        else:
+            observation = self._get_round_observation()
+            # TODO: define round reward
+            reward = self._get_round_reward()
+            info = {}
+            return observation, reward, done, info
 
     def _get_trick_reward(self, trick, player):
         score = trick.score()
         score_factor = player.index % 2 == trick.winner % 2
         return score * score_factor
+
+    def _get_round_reward(self):
+        return 1
 
     def play_reset(self):
         """
@@ -76,11 +87,10 @@ class GymCoinche(Env):
         self.round_number += 1
 
         self.atout_suit = self.suits_order[random.randint(0, 3)]  # select randomly the suit
-        self.value = random.randint(1, 2)  # Can only announce 80 or 90 to begin with
+        self.value = random.randint(0, 1)  # Can only announce 80 or 90 to begin with
         self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
-
         self.suits_order = self._define_suits_order(self.suits_order)
-        # TODO: reuse played_tricks to create a new Deck
+
         # We rebuild the deck based on previous trick won by each players
         self._rebuild_deck()
         self.played_tricks = []
@@ -110,11 +120,13 @@ class GymCoinche(Env):
 
     def _rebuild_deck(self):
         # Ordering previous played tricks by players
-        ordered_deck = []
         for p in self.players:
-            ordered_deck += [card for trick in self.played_tricks for card in trick if p.index == trick.winner]
-        self.deck = ordered_deck
+            for trick in self.played_tricks:
+                if p.index == trick.winner:
+                    self.deck.addTrick(trick)
         self.deck.cut_deck()
+        # TODO: remove
+        self.deck = Deck()
 
     def _deal_cards(self):
         """
@@ -128,13 +140,11 @@ class GymCoinche(Env):
                 p.addCards(self.deck.deal(cardsToDeal))
 
     def play_step(self, action):
-        # TODO: play for ai
         assert self.play_ai(action)
         # Play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
 
         # Handle end of trick
-        # TODO: can be removed
         assert self.trick.is_done()
         winner = self.trick.winner
         # add score to teams
@@ -153,9 +163,8 @@ class GymCoinche(Env):
 
     def play_ai(self, action):
         current_player = self.current_trick_rotation[0]
-        # TODO: can be removed
         assert isinstance(current_player, AIPlayer)
-        player_cards = [card for suits in current_player.hand for card in suits]
+        player_cards = [card for suits in current_player.hand.hand for card in suits]
         player_cards_observation = self._create_cards_observation(player_cards)
         player_action_masked = player_cards_observation * action
 
@@ -165,33 +174,48 @@ class GymCoinche(Env):
             try:
                 card_rank = (card_index % 8) + 7
                 card_suit = int(card_index / 8)
-                card = Card(Rank(card_rank), Suit(card_suit))
+                card = Card(card_rank, card_suit)
                 # TODO: play_turn
                 self.trick.addCard(card, current_player.hand, current_player.index)
                 current_player.removeCard(card)
-                self.current_trick_rotation.pop()
+                self.current_trick_rotation.pop(0)
                 return True
             except PlayException:
                 continue
         return False
 
     def _create_trick_rotation(self, starting_player_index):
-        rotation = self.players
+        rotation = np.array(self.players)
         while rotation[0].index != starting_player_index:
             rotation = np.roll(rotation, 1)
-        return rotation
+        return rotation.tolist()
 
-    def _get_current_observation(self):
+    def _get_trick_observation(self):
         # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
         played_cards = [card for trick in self.played_tricks for card in trick.trick]
         played_cards_observation = self._create_cards_observation(played_cards)
         current_player = self.current_trick_rotation[0]
-        player_cards = [card for suits in current_player.hand for card in suits]
+        player_cards = [card for suits in current_player.hand.hand for card in suits]
         player_cards_observation = self._create_cards_observation(player_cards)
         trick_cards = self.trick.trick
         trick_cards_observation = self._create_cards_observation(trick_cards)
-        contract_value = self.value
         attacker = current_player.attacker
+        contract_value = self.value / 9
+        observation = np.concatenate((played_cards_observation,
+                                      player_cards_observation,
+                                      trick_cards_observation,
+                                      [contract_value, attacker]))
+        return observation
+
+    def _get_round_observation(self):
+        # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
+        played_cards_observation = np.ones(32)
+        player_cards_observation = np.zeros(32)
+        trick_cards = self.trick.trick
+        trick_cards_observation = self._create_cards_observation(trick_cards)
+        # TODO: to do
+        attacker = 1
+        contract_value = self.value / 9
         observation = np.concatenate((played_cards_observation,
                                       player_cards_observation,
                                       trick_cards_observation,
@@ -202,8 +226,10 @@ class GymCoinche(Env):
         cards_observation = np.zeros(32)
 
         for card in cards:
-            suit_position = self.suits_order.index(card.suit())
-            rank_position = card.rank()
+            if card.suit.iden == -1:
+                continue
+            suit_position = self.suits_order.index(card.suit)
+            rank_position = card.rank.rank
             card_position = (rank_position - 7) + (suit_position * 8)
             np.put(cards_observation, card_position, 1)
         return cards_observation
@@ -230,15 +256,16 @@ class GymCoinche(Env):
                         # TODO: play_turn
                         self.trick.addCard(card, current_player.hand, current_player.index)
                         current_player.removeCard(card)
-                        self.current_trick_rotation.pop()
+                        self.current_trick_rotation.pop(0)
                         break
-                    except PlayException:
+                    except PlayException as e:
+
                         continue
 
     def _define_suits_order(self, suits_order):
-        tmp_suits_order = suits_order
+        tmp_suits_order = np.array(suits_order)
         while True:
             if tmp_suits_order[0] == self.atout_suit:
                 break
             tmp_suits_order = np.roll(tmp_suits_order, 1)
-        return tmp_suits_order
+        return tmp_suits_order.tolist()
