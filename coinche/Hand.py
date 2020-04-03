@@ -1,5 +1,6 @@
-from random import randint
+from random import randint, choice
 from coinche.Card import Suit
+
 
 clubs = 0
 diamonds = 1
@@ -58,18 +59,10 @@ class Hand:
                     suit.sort()
 
     def updateHand(self):
-        self.hand = [self.clubs, self.diamonds,
-                    self.spades, self.hearts]
+        self.hand = [self.clubs, self.diamonds, self.spades, self.hearts]
 
     def getRandomCard(self):
-        suit = randint(0,3)
-        suit = self.hand[suit]
-        while len(suit) == 0:
-            suit = randint(0,3)
-            suit = self.hand[suit]
-        index = randint(0, len(suit)-1)
-
-        return suit[index]
+        return choice(self.all_cards())
 
 
     @classmethod
@@ -117,12 +110,7 @@ class Hand:
         for card in self.hand[suitIden]:
             if card.rank.rank == cardRank:
                 cardToPlay = card
-                    
-                # remove cardToPlay from hand
-                # self.hand[suitIden].remove(card)
 
-                # update hand representation
-                # self.updateHand()
                 return cardToPlay
         return None
 
@@ -139,16 +127,20 @@ class Hand:
 
     def removeCard(self, card):
         suitId = card.suit.iden
+        initLen = self.size()
         for c in self.hand[suitId]:
             if c == card:
-#                 if suitId == clubs and card.rank.rank == 2:
-#                     self.contains2ofclubs = False
-                # print "Removing:", c.__str__()
+
                 self.hand[card.suit.iden].remove(c)
                 self.updateHand()
 
+        finalLen = self.size()
+        # TODO: remove
+        assert finalLen == initLen - 1
+
+
     def all_cards(self):
-        return set([card for suit in self.hand for card in suit])
+        return [card for suit in self.hand for card in suit]
 
 
     def __str__(self):

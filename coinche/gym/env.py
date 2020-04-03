@@ -120,13 +120,14 @@ class GymCoinche(Env):
 
     def _rebuild_deck(self):
         # Ordering previous played tricks by players
+
+        # Check if duplicated cards
+        print("Number of distinct cards: ", len(set([card for trick in self.played_tricks for card in trick.trick ])))
         for p in self.players:
             for trick in self.played_tricks:
                 if p.index == trick.winner:
                     self.deck.addTrick(trick)
         self.deck.cut_deck()
-        # TODO: remove
-        self.deck = Deck()
 
     def _deal_cards(self):
         """
@@ -164,7 +165,7 @@ class GymCoinche(Env):
     def play_ai(self, action):
         current_player = self.current_trick_rotation[0]
         assert isinstance(current_player, AIPlayer)
-        player_cards = [card for suits in current_player.hand.hand for card in suits]
+        player_cards = current_player.hand.all_cards()
         player_cards_observation = self._create_cards_observation(player_cards)
         player_action_masked = player_cards_observation * action
 
@@ -174,7 +175,7 @@ class GymCoinche(Env):
             try:
                 card_rank = (card_index % 8) + 7
                 card_suit = int(card_index / 8)
-                card = Card(card_rank, card_suit)
+                card = Card(card_rank, self.suits_order[card_suit].iden)
                 # TODO: play_turn
                 self.trick.addCard(card, current_player.hand, current_player.index)
                 current_player.removeCard(card)
@@ -251,9 +252,9 @@ class GymCoinche(Env):
             if not isinstance(current_player, AIPlayer):
                 while True:
                     # TODO: dev a deterministic player
-                    card = current_player.getRandom()
                     try:
                         # TODO: play_turn
+                        card = current_player.getRandom()
                         self.trick.addCard(card, current_player.hand, current_player.index)
                         current_player.removeCard(card)
                         self.current_trick_rotation.pop(0)

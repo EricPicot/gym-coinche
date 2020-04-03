@@ -1,2 +1,2 @@
 rl-coach
-gym
+gym==0.12.5

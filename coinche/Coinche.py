@@ -555,7 +555,7 @@ class CoincheEnv(Env):
         else:  # Else, Gather back hands
             self.deck.joinTeamsHands(self.teams[0], self.teams[1])
         print("taille du paquet maintenant", self.deck.size())
-        self.deck.cutDeck()  # Then cut
+        self.deck.cut_deck()  # Then cut
         return reward
 
     def _event_GameOver(self):
