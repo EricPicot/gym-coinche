@@ -1,4 +1,4 @@
-from rl_coach.agents.ddqn_agent import DDQNAgentParameters
+from rl_coach.agents.soft_actor_critic_agent import SoftActorCriticAgentParameters
 from rl_coach.core_types import EnvironmentSteps
 from rl_coach.environments.gym_environment import GymEnvironmentParameters, GymVectorEnvironment
 from rl_coach.graph_managers.basic_rl_graph_manager import BasicRLGraphManager
@@ -9,8 +9,7 @@ import coinche.gym
 #########
 # Agent #
 #########
-agent_params = DDQNAgentParameters()
-agent_params.network_wrappers['main'].learning_rate = 0.00025
+agent_params = SoftActorCriticAgentParameters()
 
 ###############
 # Environment #
