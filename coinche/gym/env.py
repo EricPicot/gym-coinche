@@ -127,8 +127,7 @@ class GymCoinche(Env):
                 if p.index == trick.winner:
                     self.deck.addTrick(trick)
         self.deck.cut_deck()
-        # TODO: remove
-        # self.deck = Deck()
+        self.deck = Deck()
 
     def _deal_cards(self):
         """

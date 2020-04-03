@@ -5,7 +5,6 @@ from rl_coach.graph_managers.basic_rl_graph_manager import BasicRLGraphManager
 from rl_coach.graph_managers.graph_manager import ScheduleParameters
 import coinche.gym
 
-
 #########
 # Agent #
 #########
@@ -19,11 +18,17 @@ env_params = GymVectorEnvironment(level='coinche-v0')
 ####################
 # Graph Scheduling #
 ####################
+num_round_improve_steps = 80
+num_round_heatup = 8
+num_round_training = 300
+num_round_evaluation = 10
+num_tricks_in_round = 8
+
 schedule_params = ScheduleParameters()
-schedule_params.improve_steps = EnvironmentSteps(5000)
-schedule_params.heatup_steps = EnvironmentSteps(500)
-schedule_params.steps_between_evaluation_periods = EnvironmentSteps(2500)
-schedule_params.evaluation_steps = EnvironmentSteps(1350)
+schedule_params.improve_steps = EnvironmentSteps(num_round_improve_steps * num_tricks_in_round)
+schedule_params.heatup_steps = EnvironmentSteps(num_round_heatup * num_tricks_in_round)
+schedule_params.steps_between_evaluation_periods = EnvironmentSteps(num_round_training * num_tricks_in_round)
+schedule_params.evaluation_steps = EnvironmentSteps(num_round_evaluation * num_tricks_in_round)
 
 ########################
 # Create Graph Manager #
