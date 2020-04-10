@@ -5,7 +5,7 @@ import pandas as pd
 reward_list = []
 player_0_hands = []
 player_2_hands = []
-NUM_EPISODES = 1000000
+NUM_EPISODES = 100000
 
 env = gym.make('coinche-v0')
 env.__init__()
