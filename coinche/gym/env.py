@@ -65,7 +65,8 @@ class GymCoinche(Env):
             observation = self._get_round_observation()
             # TODO: define round reward
             reward = self._get_round_reward()
-            info = {}
+            info = {"player0-hand": self.player0_original_hand,
+                    "player2-hand": self.player2_original_hand}
             return observation, reward, done, info
 
     def _get_trick_reward(self, trick, player):
@@ -114,6 +115,9 @@ class GymCoinche(Env):
         # -----
         self._deal_cards()
 
+        self.player0_original_hand = self._create_cards_observation(self.players[0].hand.all_cards())
+        self.player2_original_hand = self._create_cards_observation(self.players[2].hand.all_cards())
+
         self.trick = Trick(self.atout_suit, len(self.played_tricks) + 1)
         self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
         self._play_until_end_of_rotation_or_ai_play()
@@ -141,6 +145,8 @@ class GymCoinche(Env):
                 p.addCards(self.deck.deal(cardsToDeal))
 
     def play_step(self, action):
+        self.play_ai(action)
+
         # Play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
 
@@ -152,7 +158,6 @@ class GymCoinche(Env):
         # should stop if trick_number==8
         if len(self.played_tricks) == 8:
             return True
-
         self.trick = Trick(self.atout_suit, len(self.played_tricks) + 1)
         # Choose next starter
         self.current_trick_rotation = self._create_trick_rotation(winner)
