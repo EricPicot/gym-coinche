@@ -127,22 +127,14 @@ class Hand:
 
     def removeCard(self, card):
         suitId = card.suit.iden
-        initLen = self.size()
         for c in self.hand[suitId]:
             if c == card:
 
                 self.hand[card.suit.iden].remove(c)
                 self.updateHand()
 
-        finalLen = self.size()
-        # TODO: remove
-        if initLen != 1:
-            assert finalLen == initLen - 1
-
-
     def all_cards(self):
         return [card for suit in self.hand for card in suit]
-
 
     def __str__(self):
         handStr = ''

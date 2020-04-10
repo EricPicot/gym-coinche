@@ -141,12 +141,10 @@ class GymCoinche(Env):
                 p.addCards(self.deck.deal(cardsToDeal))
 
     def play_step(self, action):
-        assert self.play_ai(action)
         # Play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
 
         # Handle end of trick
-        assert self.trick.is_done()
         winner = self.trick.winner
         # add score to teams
         self.played_tricks.append(self.trick)
@@ -164,7 +162,6 @@ class GymCoinche(Env):
 
     def play_ai(self, action):
         current_player = self.current_trick_rotation[0]
-        assert isinstance(current_player, AIPlayer)
         player_cards = current_player.hand.all_cards()
         player_cards_observation = self._create_cards_observation(player_cards)
         player_action_masked = player_cards_observation * action
