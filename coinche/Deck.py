@@ -1,6 +1,6 @@
 import random as rand
 
-from .Card import Card
+from coinche.Card import Card
 
 numSuits = 4
 minRank = 7
@@ -9,8 +9,8 @@ maxRank = 15
 class Deck:
     def __init__(self):
         self.deck = []
-        for suit in range(0,numSuits):
-            for rank in range(minRank,maxRank):
+        for suit in range(0, numSuits):
+            for rank in range(minRank, maxRank):
                 self.deck.append(Card(rank, suit))
 
     def __str__(self):
@@ -38,8 +38,7 @@ class Deck:
         self.deck += cards
         
     def addTrick(self, trick):
-        for card in trick:
-            self.deck.addCards(card)
+        self.deck += trick.trick
             
     def joinTeamsSubDecks(self, teamA, teamB):
         self.deck = teamA.cardsInRound + teamB.cardsInRound
@@ -47,8 +46,7 @@ class Deck:
     def joinTeamsHands(self, teamA, teamB):
         self.deck = teamA.cardsInHand + teamB.cardsInHand
         
-    def cutDeck(self):
+    def cut_deck(self):
         '''Randomly cuts the deck'''
         cut = rand.randint(2, len(self.deck)-3)
         self.deck = self.deck[-cut:] + self.deck[0:len(self.deck) - cut]
-        

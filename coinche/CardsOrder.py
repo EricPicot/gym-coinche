@@ -10,6 +10,18 @@ generic_values = dict(
 )
 
 
+generic_rank = dict(
+    [(7,1),
+    (8,2),
+    (9,3),
+    (10,7),
+    (11,4),
+    (12,5),
+    (13,6),
+    (14,8)]
+)
+
+
 atout_values = dict(
     [(7,0),
     (8,0),

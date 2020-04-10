@@ -34,6 +34,9 @@ class Card:
     def __str__(self):
         return self.rank.__str__() + self.suit.__str__()
 
+    def __hash__(self):
+        return hash(self.__str__())
+
 
 '''Suit identification (iden)'''
 '''0: clubs'''
@@ -75,6 +78,11 @@ class Suit:
     def __str__(self):
         return self.string
 
+
+CLUB = Suit(0)
+DIAMOND = Suit(1)
+SPADE = Suit(2)
+HEART = Suit(3)
 
 
 """Ranks indicated by numbers 2-14, 2-Ace"""

@@ -23,15 +23,13 @@ One of the issue that we are facing would be the possibility to have the AI play
 
 We use the framework [gym](http://gym.openai.com/docs/) linked with [RL Coach](http://gym.openai.com/docs/) that provides deep learning algorithm.
 
-Gym envirronment takes care of the game in itself (rules, rounds) and provide standard outputs to reiforcement learning algorithms based on steps
-
-
+Gym environment takes care of the game in itself (rules, rounds) and provide standard outputs to reiforcement learning algorithms based on steps
 ```
+$ pip install requirements.txt
 
-## Usage
+# to run a coach preset
 
-```python
-
+$ coach -p ./preset.py -e coinche -ep ./experiments/
 ```
 
 ## Contributing
@@ -41,3 +39,4 @@ Please make sure to update tests as appropriate.
 
 ## License
 [C.R.O.](https://fr.wikipedia.org/wiki/Coinche)
+
