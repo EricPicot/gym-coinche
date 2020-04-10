@@ -142,6 +142,8 @@ class GymCoinche(Env):
 
     def play_step(self, action):
         # Play until end of trick
+        self.play_ai(action)
+
         self._play_until_end_of_rotation_or_ai_play()
 
         # Handle end of trick
