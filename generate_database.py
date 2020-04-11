@@ -7,7 +7,7 @@ player_0_hands = []
 player_2_hands = []
 NUM_EPISODES = 100000
 
-env = gym.make('coinche-v0')
+env = gym.make('coinche.gym.env:coinche-v0')
 env.__init__()
 
 for i_episode in range(NUM_EPISODES):
