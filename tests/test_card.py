@@ -1,15 +1,10 @@
-from .Card import Card
+from coinche.card import Card, Rank, Suit
 
 """Tests different cards for (in)equality using a"""
 """unit test like format. Shows correctness of the operators,"""
 """which compare cards relative to each others' ranks."""
 
 print('Starting Card opertor tests...\n')
-
-clubs = 0
-diamonds = 1
-spades = 2
-hearts = 3
 
 
 # c = Card(2, hearts)
@@ -37,8 +32,8 @@ hearts = 3
 # print "c > c1", c > c1
 
 
-c = Card(12, diamonds)
-c1 = Card(12, clubs)
+c = Card(rank=Rank.QUEEN, suit=Suit.HEART)
+c1 = Card(rank=Rank.QUEEN, suit=Suit.DIAMOND)
 
 
 print('\nc:', c)
