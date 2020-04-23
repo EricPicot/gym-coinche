@@ -159,7 +159,6 @@ class GymCoinche(Env):
         if len(self.played_tricks) == 8:
             return True
 
-
         self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
         # Choose next starter
         self.current_trick_rotation = self._create_trick_rotation(winner.index)
