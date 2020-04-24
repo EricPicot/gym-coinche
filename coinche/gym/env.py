@@ -1,4 +1,4 @@
-from coinche.player import AIPlayer, RandomPlayer
+from coinche.player import GymPlayer, RandomPlayer
 from coinche.trick import Trick
 from coinche.deck import Deck
 from coinche.card import Card, Rank, Suit
@@ -20,7 +20,7 @@ class GymCoinche(Env):
         self.action_space = spaces.Box(low=0, high=1, shape=(32,))
 
         self.players = [
-            RandomPlayer(0, "N"), RandomPlayer(1, "E"), AIPlayer(2, "S"), RandomPlayer(3, "W")
+            RandomPlayer(0, "N"), RandomPlayer(1, "E"), GymPlayer(2, "S"), RandomPlayer(3, "W")
         ]
         self.current_trick_rotation = []
         self.deck = Deck()
@@ -40,6 +40,7 @@ class GymCoinche(Env):
         :return: observation
         """
         self._play_reset()
+        self._play_until_end_of_rotation_or_ai_play()
         observation = self._get_trick_observation()
         return observation
 
@@ -67,14 +68,6 @@ class GymCoinche(Env):
             info = {"player0-hand": self.player0_original_hand,
                     "player2-hand": self.player2_original_hand}
             return observation, reward, done, info
-
-    def _get_trick_reward(self, trick, player):
-        score = trick.score()
-        score_factor = player.index % 2 == trick.winner.index % 2
-        return score * score_factor
-
-    def _get_round_reward(self):
-        return 1
 
     def _play_reset(self):
         """
@@ -120,7 +113,6 @@ class GymCoinche(Env):
 
         self.trick = Trick(self.atout_suit, trick_number=1)
         self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
-        self._play_until_end_of_rotation_or_ai_play()
 
     def _rebuild_deck(self, played_tricks):
         # Check if duplicated cards
@@ -143,30 +135,32 @@ class GymCoinche(Env):
             for p in players_round:  # Stopping condition on one round
                 p.add_cards(self.deck.deal(cardsToDeal))
 
-
     def _play_step(self, action):
         # AI has to play
-        self._play_ai(action)
+        self._play_gym(action)
         # Then play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
 
-        # Handle end of trick
-        winner = self.trick.winner
-        # add score to teams
-        self.played_tricks.append(self.trick)
+        if len(self.current_trick_rotation) == 0:
+            # Handle end of trick
+            winner = self.trick.winner
+            # add score to teams
+            self.played_tricks.append(self.trick)
 
-        # should stop if trick_number==8
-        if len(self.played_tricks) == 8:
-            return True
+            # should stop if trick_number==8
+            if len(self.played_tricks) == 8:
+                return True
 
-        self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
-        # Choose next starter
-        self.current_trick_rotation = self._create_trick_rotation(winner.index)
-        # Play until AI
-        self._play_until_end_of_rotation_or_ai_play()
-        return False
+            self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
+            # Choose next starter
+            self.current_trick_rotation = self._create_trick_rotation(winner.index)
+            # Play until AI
+            self._play_until_end_of_rotation_or_ai_play()
+            return False
+        else:
+            return False
 
-    def _play_ai(self, action):
+    def _play_gym(self, action):
         current_player = self.current_trick_rotation[0]
         player_cards_observation = self._create_cards_observation(current_player.cards)
         player_action_masked = player_cards_observation * action
@@ -183,16 +177,10 @@ class GymCoinche(Env):
                 card = Card(Rank(card_rank), Suit(self.suits_order[card_suit]))
                 self.trick.add_card(card, current_player)
                 current_player.remove_card(card)
-                self.current_trick_rotation.pop(0)
                 break
             except PlayException:
                 continue
-
-    def _create_trick_rotation(self, starting_player_index):
-        rotation = np.array(self.players)
-        while rotation[0].index != starting_player_index:
-            rotation = np.roll(rotation, 1)
-        return rotation.tolist()
+        self.current_trick_rotation.pop(0)
 
     def _get_trick_observation(self):
         # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
@@ -227,8 +215,6 @@ class GymCoinche(Env):
         cards_observation = np.zeros(32)
 
         for card in cards:
-            if card.suit == -1:
-                continue
             suit_position = self.suits_order.index(card.suit)
             rank_position = card.rank.value
             card_position = rank_position + (suit_position * 8)
@@ -245,22 +231,19 @@ class GymCoinche(Env):
         """
         while len(self.current_trick_rotation) > 0:
             current_player = self.current_trick_rotation[0]
-            if isinstance(current_player, AIPlayer):
+            if isinstance(current_player, GymPlayer):
                 break
 
             # Ask not ai player to player (could be random)
-            if not isinstance(current_player, AIPlayer):
-                while True:
-                    # TODO: dev a deterministic player
-                    try:
-                        # TODO: play_turn
-                        card = current_player.get_random()
-                        self.trick.add_card(card, current_player)
-                        current_player.remove_card(card)
-                        self.current_trick_rotation.pop(0)
-                        break
-                    except PlayException as e:
-                        continue
+            if not isinstance(current_player, GymPlayer):
+                current_player.play_turn(self.trick)
+                self.current_trick_rotation.pop(0)
+
+    def _create_trick_rotation(self, starting_player_index):
+        rotation = np.array(self.players)
+        while rotation[0].index != starting_player_index:
+            rotation = np.roll(rotation, 1)
+        return rotation.tolist()
 
     def _define_suits_order(self, suits_order):
         tmp_suits_order = np.array(suits_order)
@@ -269,3 +252,11 @@ class GymCoinche(Env):
                 break
             tmp_suits_order = np.roll(tmp_suits_order, 1)
         return tmp_suits_order.tolist()
+
+    def _get_trick_reward(self, trick, player):
+        score = trick.score()
+        score_factor = player.index % 2 == trick.winner.index % 2
+        return score * score_factor
+
+    def _get_round_reward(self):
+        return 1

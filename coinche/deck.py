@@ -2,10 +2,6 @@ import random as rand
 
 from coinche.card import Card, Rank, Suit
 
-numSuits = 4
-minRank = 7
-maxRank = 15
-
 
 class Deck:
     def __init__(self):

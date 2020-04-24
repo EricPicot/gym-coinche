@@ -4,7 +4,7 @@ from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurre
 
 class Trick:
     def __init__(self, atout_suit, trick_number):
-        self.cards = [UnknownCard(), UnknownCard(), UnknownCard(), UnknownCard()]
+        self.cards = []
         self.atout_suit = atout_suit
         self.trick_number = trick_number
         self.suit = None
@@ -43,11 +43,11 @@ class Trick:
             self.suit = card.suit
             self.highest_card = card
             self.winner = player
-            self.cards[player.index] = card
+            self.cards.append(card)
             self.cards_in_trick += 1
         else:
             self._assert_valid_play(card, player)
-            self.cards[player.index] = card
+            self.cards.append(card)
             self.cards_in_trick += 1
 
             if self.is_player_card_higher_than_highest(card):
