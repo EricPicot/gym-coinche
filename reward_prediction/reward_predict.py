@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import layers, model
+from tensorflow.keras import layers, models
 from tensorflow.keras.losses import mse
 
 import pandas as pd
@@ -31,7 +31,7 @@ for i in range(163):
 
 def build_model():
     model = models.Sequential()
-    model.add(layers.Dense(256, activation='relu', input_shape=64))
+    model.add(layers.Dense(256, activation='relu', input_shape=(64,)))
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(32, activation='relu'))
     model.add(layers.Dense(8, activation='relu'))
@@ -51,4 +51,4 @@ epochs=50
 relu_class_weigth_model.fit(x = xtrain.reshape(80000, 64), y = ytrain, epochs=epochs, batch_size=256,
           validation_data=(xtest.reshape(20000, 64), ytest), class_weight=class_weights)
 
-models.save_model(relu_class_weigth_model, "./reward_prediction/reward_model.h5")
+models.save_model(relu_class_weigth_model, ".//reward_model.h5")

@@ -6,7 +6,9 @@ from coinche.exceptions import PlayException
 from gym import Env, spaces
 import numpy as np
 import random
+from reward_prediction import shifting_hand, decision_process
 
+model = models.load_model("../reward_prediction/reward_model.h5")
 
 class GymCoinche(Env):
     def __init__(self):
@@ -86,10 +88,8 @@ class GymCoinche(Env):
         # Select color and value
         self.round_number += 1
 
-        self.atout_suit = random.choice(self.suits_order)  # select randomly the suit
-        self.value = random.randint(0, 1)  # Can only announce 80 or 90 to begin with
-        self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
-        self.suits_order = self._define_suits_order(self.suits_order)
+        # TODO vecteur divisé en 9 entre 0 et 1
+
 
         # We rebuild the deck based on previous trick won by each players
         # TODO: Ordering previous played tricks by players
@@ -115,6 +115,28 @@ class GymCoinche(Env):
         # -----
         self._deal_cards()
 
+        shift_team1, expected_reward_team1 = decision_process(self.players[0].cards, self.players[2].cards)
+        shift_team2, expected_reward_team2 = decision_process(self.players[1].cards, self.players[3].cards)
+
+        if expected_reward_team1 > expected_reward_team2:
+            expected_reward_team = expected_reward_team1
+            self.attacker_team = 0
+            shift = shift_team1
+        else:
+            expected_reward_team expected_reward_team2
+            self.attacker_team = 1
+            shift = shift_team2
+
+        for p in self.players:
+            p.cards = shifting_hand(p.cards, value=shift)
+
+        self.atout_suit = self.suits_order[shift]  # select randomly the suit
+        self.value = random.randint(0, 9) / 9  # Can only announce 80 or 90 to begin with
+
+        self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+        self.suits_order = self._define_suits_order(self.suits_order)
+
+# shifting_hand(hand) for p in Players for hand in p.hand
         self.player0_original_hand = self._create_cards_observation(self.players[0].cards)
         self.player2_original_hand = self._create_cards_observation(self.players[2].cards)
 
