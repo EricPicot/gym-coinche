@@ -51,4 +51,4 @@ epochs=50
 relu_class_weigth_model.fit(x = xtrain.reshape(80000, 64), y = ytrain, epochs=epochs, batch_size=256,
           validation_data=(xtest.reshape(20000, 64), ytest), class_weight=class_weights)
 
-models.save_model(relu_class_weigth_model, ".//reward_model.h5")
+models.save_model(relu_class_weigth_model, "./reward_model.h5")
