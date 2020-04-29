@@ -8,12 +8,7 @@ from gym import Env, spaces
 import numpy as np
 import random
 
-from coinche.reward_prediction import decision_process, predict_reward
-from tensorflow.keras import layers, models
-
-
-
-model = models.load_model("./reward_prediction/reward_model.h5")
+from coinche.reward_prediction import decision_process
 
 class GymCoinche(Env):
     def __init__(self):
@@ -36,7 +31,6 @@ class GymCoinche(Env):
         self.trick = None
         self.atout_suit = None
         self.value = None
-        # TODO: select randomly the attacker_team in {0,1}
         self.attacker_team = 0
 
 
@@ -95,11 +89,7 @@ class GymCoinche(Env):
         # Select color and value
         self.round_number += 1
 
-        # TODO vecteur divisé en 9 entre 0 et 1
-
-
         # We rebuild the deck based on previous trick won by each players
-        # TODO: Ordering previous played tricks by players
         self._rebuild_deck(self.played_tricks)
         self.played_tricks = []
 
@@ -140,8 +130,6 @@ class GymCoinche(Env):
                 if p.index == trick.winner.index:
                     self.deck.add_trick(trick)
         self.deck.cut_deck()
-        # TODO: remove this line
-        self.deck = Deck()
 
     def _deal_cards(self):
         """
@@ -180,8 +168,7 @@ class GymCoinche(Env):
     def _play_ai(self, action):
         current_player = self.current_trick_rotation[0]
         player_cards_observation = self._create_cards_observation(current_player.cards)
-        player_action_masked = player_cards_observation * action
-
+        player_action_masked = player_cards_observation * action / np.sum(action)
         # Play cards in probability order
         if np.max(player_action_masked) > 0:
             cards_index = np.argsort(-player_action_masked)
@@ -227,7 +214,7 @@ class GymCoinche(Env):
         trick_cards_observation = self._create_cards_observation(self.trick.cards)
         # TODO: to do
         attacker = 1
-        contract_value = self.value / 9
+        contract_value = self.value
         observation = np.concatenate((played_cards_observation,
                                       player_cards_observation,
                                       trick_cards_observation,
@@ -281,11 +268,6 @@ class GymCoinche(Env):
             tmp_suits_order = np.roll(tmp_suits_order, 1)
         return tmp_suits_order.tolist()
 
-    def predict_reward(hand1, hand2):
-
-        x = np.concatenate([hand1, hand2])
-        return model.predict(x.reshape(1, 64))
-
 
     def set_contrat(self):
 
@@ -306,6 +288,7 @@ class GymCoinche(Env):
             attacker_team = 1
             shift = shift_team2
 
+        # Carefull: shifting is anti-clockwise
         self.atout_suit = self.suits_order[-shift]
 
         self.suits_order = self._define_suits_order(self.suits_order)
