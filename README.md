@@ -18,8 +18,14 @@ The AI player will then have to both learn the rules and some strategies
 
 One of the issue that we are facing would be the possibility to have the AI playing a card while it is not allow given the context. To prevent such position, we chose to deliver as output of the AI a vector of probability rather than a card. Therefore if the AI favors a card that can't be played, the gym envirronment will do a mask on the possible strokes and select the highest probability card favored by the AI
 
+## Score prediction
+
+To train the reward_model, run reward_predict.py.
+It will generate a tf model, which weifhts are saved under h5 format
+
 
 ## Installation
+
 
 We use the framework [gym](http://gym.openai.com/docs/) linked with [RL Coach](http://gym.openai.com/docs/) that provides deep learning algorithm.
 

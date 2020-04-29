@@ -8,8 +8,12 @@ from gym import Env, spaces
 import numpy as np
 import random
 
-import reward_prediction
+from coinche.reward_prediction import decision_process, predict_reward
+from tensorflow.keras import layers, models
 
+
+
+model = models.load_model("./reward_prediction/reward_model.h5")
 
 class GymCoinche(Env):
     def __init__(self):
@@ -280,7 +284,6 @@ class GymCoinche(Env):
     def predict_reward(hand1, hand2):
 
         x = np.concatenate([hand1, hand2])
-        print(x.shape)
         return model.predict(x.reshape(1, 64))
 
 
@@ -291,8 +294,8 @@ class GymCoinche(Env):
         hand2 = self._create_cards_observation(self.players[2].cards)
         hand3 = self._create_cards_observation(self.players[3].cards)
 
-        shift_team1, expected_reward_team1 = reward_prediction.decision_process(hand0, hand2)
-        shift_team2, expected_reward_team2 = reward_prediction.decision_process(hand1, hand3)
+        shift_team1, expected_reward_team1 = decision_process(hand0, hand2)
+        shift_team2, expected_reward_team2 = decision_process(hand1, hand3)
 
         if expected_reward_team1 > expected_reward_team2:
             expected_reward_team = expected_reward_team1
@@ -303,13 +306,13 @@ class GymCoinche(Env):
             attacker_team = 1
             shift = shift_team2
 
-        self.suits_order = self._define_suits_order(shift)
-        self.atout_suit = self.suits_order[0]
+        self.atout_suit = self.suits_order[-shift]
 
-        self.value = np.max(0,(expected_reward_team//10) - 8)/9
+        self.suits_order = self._define_suits_order(self.suits_order)
+
+        self.value = np.max([0,(expected_reward_team//10) - 8])/9
 
         self.attacker_team = attacker_team
-
 
     def shifting_hand(hand, value=0):
         return np.roll(hand, value * 8)  # shifted hand
