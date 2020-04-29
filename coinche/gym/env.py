@@ -4,11 +4,12 @@ from coinche.deck import Deck
 from coinche.card import Card, Rank, Suit
 from coinche.exceptions import PlayException
 from gym import Env, spaces
+
 import numpy as np
 import random
-from reward_prediction import shifting_hand, decision_process
 
-model = models.load_model("../reward_prediction/reward_model.h5")
+import reward_prediction
+
 
 class GymCoinche(Env):
     def __init__(self):
@@ -34,7 +35,6 @@ class GymCoinche(Env):
         # TODO: select randomly the attacker_team in {0,1}
         self.attacker_team = 0
 
-        self.suits_order = [suit for suit in Suit]
 
     def reset(self):
         """
@@ -85,6 +85,9 @@ class GymCoinche(Env):
 
         :return:
         """
+
+        self.suits_order = [suit for suit in Suit]
+
         # Select color and value
         self.round_number += 1
 
@@ -95,6 +98,12 @@ class GymCoinche(Env):
         # TODO: Ordering previous played tricks by players
         self._rebuild_deck(self.played_tricks)
         self.played_tricks = []
+
+        # -----
+        self._deal_cards()
+
+        # Get value of the contract and attacker team and updates suits order
+        self.set_contrat()
 
         # Set players attacker
         for p in self.players:
@@ -112,31 +121,7 @@ class GymCoinche(Env):
         for p in self.players:
             p.reset_round()
 
-        # -----
-        self._deal_cards()
-
-        shift_team1, expected_reward_team1 = decision_process(self.players[0].cards, self.players[2].cards)
-        shift_team2, expected_reward_team2 = decision_process(self.players[1].cards, self.players[3].cards)
-
-        if expected_reward_team1 > expected_reward_team2:
-            expected_reward_team = expected_reward_team1
-            self.attacker_team = 0
-            shift = shift_team1
-        else:
-            expected_reward_team expected_reward_team2
-            self.attacker_team = 1
-            shift = shift_team2
-
-        for p in self.players:
-            p.cards = shifting_hand(p.cards, value=shift)
-
-        self.atout_suit = self.suits_order[shift]  # select randomly the suit
-        self.value = random.randint(0, 9) / 9  # Can only announce 80 or 90 to begin with
-
-        self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
-        self.suits_order = self._define_suits_order(self.suits_order)
-
-# shifting_hand(hand) for p in Players for hand in p.hand
+        # shifting_hand(hand) for p in Players for hand in p.hand
         self.player0_original_hand = self._create_cards_observation(self.players[0].cards)
         self.player2_original_hand = self._create_cards_observation(self.players[2].cards)
 
@@ -291,3 +276,40 @@ class GymCoinche(Env):
                 break
             tmp_suits_order = np.roll(tmp_suits_order, 1)
         return tmp_suits_order.tolist()
+
+    def predict_reward(hand1, hand2):
+
+        x = np.concatenate([hand1, hand2])
+        print(x.shape)
+        return model.predict(x.reshape(1, 64))
+
+
+    def set_contrat(self):
+
+        hand0 = self._create_cards_observation(self.players[0].cards)
+        hand1 = self._create_cards_observation(self.players[1].cards)
+        hand2 = self._create_cards_observation(self.players[2].cards)
+        hand3 = self._create_cards_observation(self.players[3].cards)
+
+        shift_team1, expected_reward_team1 = reward_prediction.decision_process(hand0, hand2)
+        shift_team2, expected_reward_team2 = reward_prediction.decision_process(hand1, hand3)
+
+        if expected_reward_team1 > expected_reward_team2:
+            expected_reward_team = expected_reward_team1
+            attacker_team = 0
+            shift = shift_team1
+        else:
+            expected_reward_team = expected_reward_team2
+            attacker_team = 1
+            shift = shift_team2
+
+        self.suits_order = self._define_suits_order(shift)
+        self.atout_suit = self.suits_order[0]
+
+        self.value = np.max(0,(expected_reward_team//10) - 8)/9
+
+        self.attacker_team = attacker_team
+
+
+    def shifting_hand(hand, value=0):
+        return np.roll(hand, value * 8)  # shifted hand

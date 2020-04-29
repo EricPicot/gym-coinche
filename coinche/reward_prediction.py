@@ -1,9 +1,10 @@
-import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras.losses import mse
 
-import pandas as pd
 import numpy as np
+import random
+
+
+model = models.load_model("../reward_prediction/reward_model.h5")
 
 def predict_reward(hand1, hand2):
 
@@ -30,6 +31,29 @@ def decision_process(hand1, hand2):
     :param hand2: 
     :return: 
     """
+def set_contrat(players):
+
+    shift_team1, expected_reward_team1 = decision_process(players[0].cards, players[2].cards)
+    shift_team2, expected_reward_team2 = decision_process(players[1].cards, players[3].cards)
+
+    if expected_reward_team1 > expected_reward_team2:
+        expected_reward_team = expected_reward_team1
+        attacker_team = 0
+        shift = shift_team1
+    else:
+        expected_reward_team = expected_reward_team2
+        attacker_team = 1
+        shift = shift_team2
+
+    for p in players:
+        p.cards = shifting_hand(p.cards, value=shift)
+
+    value = random.randint(0, 9) / 9  # Can only announce 80 or 90 to begin with
+
+    attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+
+    return attacker_team, value
+
 
 def shifting_hand(hand, value=0):
     return np.roll(hand, value*8) # shifted hand
