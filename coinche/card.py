@@ -1,3 +1,4 @@
+import numpy as np
 from enum import Enum
 
 
@@ -30,10 +31,16 @@ class Card:
     def __hash__(self):
         return hash(self.__str__())
 
+    def to_index(self, suits_order):
+        suit_position = suits_order.index(self.suit)
+        rank_position = self.rank.value
+        return rank_position + (suit_position * 8)
 
-class UnknownCard(Card):
-    def __init__(self):
-        super(UnknownCard, self).__init__(-1, -1)
+    @staticmethod
+    def from_index(card_index, suits_order):
+        card_rank = (card_index % 8)
+        card_suit = int(card_index / 8)
+        return Card(Rank(card_rank), Suit(suits_order[card_suit]))
 
 
 class Suit(Enum):
@@ -43,6 +50,15 @@ class Suit(Enum):
     DIAMOND = 1
     SPADE = 2
     HEART = 3
+
+    @staticmethod
+    def create_order(atout_suit):
+        suits_order = np.array(list(Suit))
+        while True:
+            if suits_order[0] == atout_suit:
+                break
+            suits_order = np.roll(suits_order, 1)
+        return suits_order.tolist()
 
 
 class Rank(Enum):

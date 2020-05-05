@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from random import choice
+from random import choice, sample
+from coinche.utils import convert_cards_to_vector, convert_index_to_cards
 from coinche.exceptions import PlayException
 
 
@@ -9,9 +10,6 @@ class Player:
         self.index = index
         self.name = name
         self.cards = []
-        self.score = 0
-        self.team = None
-        self.teammate = None
         self.attacker = None
 
     def add_cards(self, cards):
@@ -37,51 +35,33 @@ class Player:
     def remove_card(self, card):
         self.cards.remove(card)
 
-    def reset_round(self):
-        self.score = 0
-
-    def play_turn(self, trick):
-        while True:
+    def play_turn(self, trick, played_tricks, suits_order, contract_value):
+        cards_order = self.get_cards_order(trick, played_tricks, suits_order, contract_value)
+        for card in cards_order:
             try:
-                card = self.get_turn_card(trick)
                 trick.add_card(card, self)
                 self.remove_card(card)
                 break
             except PlayException as e:
                 continue
 
-    def get_turn_card(self, trick):
+    def get_cards_order(self, trick, played_tricks, suits_order, contract_value):
         raise NotImplementedError()
 
 
 class RandomPlayer(Player):
-    def get_turn_card(self, _trick):
-        return choice(self.cards)
+    def get_cards_order(self, _trick, _played_tricks, _suits_order, _contract_value):
+        return sample(self.cards, len(self.cards))
 
 
 class DeterministicPlayer(RandomPlayer):
-    def get_turn_card(self, trick):
-        # If player is the first to start
-        if trick.cardsInTrick == 0:
-            # If player is an attacker
-            if self.attacker == 1:
-                # Try to play Atout or play random card
-                if self.has_suit(trick.atout_suit):
-                    suit_cards = self.get_suit_card(trick.atout_suit)
-                    return choice(suit_cards)
-                else:
-                    return choice(self.cards)
-        return choice(self.cards)
-
-
-class GymPlayer(Player):
-    def get_turn_card(self, _trick):
-        raise NotImplementedError()
+    def get_cards_order(self, trick, _played_tricks, _suits_order, _contract_value):
+        return self.cards
 
 
 class AIPlayer(Player):
-    def __init__(self, index, name, checkpoint_path):
-        super(AIPlayer, self).__init__(index, name)
+    def __init__(self, checkpoint_path, *args, **kwargs):
+        super(AIPlayer, self).__init__(*args, **kwargs)
         self.input_tensor = "main_level/agent/policy/online/network_0/observation/observation:0"
         self.output_tensor = "main_level/agent/policy/online/network_0/sac_policy_head_0/policy_mean:0"
 
@@ -89,31 +69,26 @@ class AIPlayer(Player):
         saver = tf.compat.v1.train.import_meta_graph(checkpoint_path + ".meta")
         saver.restore(self.sess, checkpoint_path)
 
-    def get_turn_card(self, trick):
-        # TODO: create observation
-        trick_observation = np.random.uniform(0, 1, 98)
+    def get_cards_order(self, trick, played_tricks, suits_order, contract_value):
+        # Create observation
+        played_cards = [card for trick in played_tricks for card in trick.cards]
+        played_cards_observation = convert_cards_to_vector(played_cards, suits_order)
+        player_cards_observation = convert_cards_to_vector(self.cards, suits_order)
+        trick_cards_observation = convert_cards_to_vector(trick.cards, suits_order)
+        trick_observation = np.concatenate((played_cards_observation,
+                                            player_cards_observation,
+                                            trick_cards_observation,
+                                            [contract_value / 9, self.attacker]))
         trick_observation = np.expand_dims(trick_observation, axis=0)
         actions = self.sess.run(self.output_tensor, {self.input_tensor: trick_observation})
         action = np.squeeze(actions, axis=0)
 
-        # TODO: create observation
-        player_cards_observation = self._create_cards_observation(self.cards)
+        player_cards_observation = convert_cards_to_vector(self.cards, suits_order)
         player_action_masked = player_cards_observation * action
 
         # Play cards in probability order
         if np.max(player_action_masked) > 0:
-            cards_index = np.argsort(-player_action_masked)
+            cards_index_order = np.argsort(-player_action_masked)
         else:
-            cards_index = np.argsort(-player_cards_observation)
-        for card_index in cards_index:
-            try:
-                card_rank = (card_index % 8)
-                card_suit = int(card_index / 8)
-                card = Card(Rank(card_rank), Suit(self.suits_order[card_suit]))
-                self.trick.add_card(card, current_player)
-                current_player.remove_card(card)
-                break
-            except PlayException:
-                continue
-
-
+            cards_index_order = np.argsort(-player_cards_observation)
+        return convert_index_to_cards(cards_index_order, suits_order)

@@ -10,7 +10,7 @@ class Trick:
         self.suit = None
         self.cards_in_trick = 0
         self.winner = -1
-        self.highest_card = UnknownCard()
+        self.highest_card = None
 
     def _assert_valid_play(self, card, player):
         if card is None:
@@ -80,11 +80,10 @@ class Trick:
         """
         trick_value = 0
         for card in self.cards:
-            if card != UnknownCard():
-                if card.suit == self.atout_suit:
-                    trick_value += _ATOUT_VALUES[card.rank]
-                else:
-                    trick_value += _GENERIC_VALUES[card.rank]
+            if card.suit == self.atout_suit:
+                trick_value += _ATOUT_VALUES[card.rank]
+            else:
+                trick_value += _GENERIC_VALUES[card.rank]
         # 10 de der
         if self.trick_number == 8:
             trick_value += 10
