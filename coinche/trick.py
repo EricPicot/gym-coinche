@@ -1,4 +1,4 @@
-from coinche.card import UnknownCard, Rank
+from coinche.card import Rank
 from coinche.exceptions import MustPlayHigherAtout, MustPlayACard, MustPlayCurrentSuit, MustPlayAtout, MustPlayHisCards
 
 

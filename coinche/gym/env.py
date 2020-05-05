@@ -150,8 +150,8 @@ class GymCoinche(Env):
 
     def _play_gym(self, action):
         current_player = self.current_trick_rotation[0]
-        current_player.set_cards_play_order(action, self.suits_order)
-        current_player.play_turn()
+        current_player.set_next_action(action)
+        current_player.play_turn(self.trick, self.played_tricks, self.suits_order, self.value)
         self.current_trick_rotation.pop(0)
 
     def _play_until_end_of_rotation_or_ai_play(self):
