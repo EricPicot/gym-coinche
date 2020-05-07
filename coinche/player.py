@@ -64,10 +64,13 @@ class AIPlayer(Player):
         super(AIPlayer, self).__init__(*args, **kwargs)
         self.input_tensor = "main_level/agent/policy/online/network_0/observation/observation:0"
         self.output_tensor = "main_level/agent/policy/online/network_0/sac_policy_head_0/policy_mean:0"
-
-        self.sess = tf.compat.v1.Session()
-        saver = tf.compat.v1.train.import_meta_graph(checkpoint_path + ".meta")
-        saver.restore(self.sess, checkpoint_path)
+        self.graph = tf.Graph()
+        self.sess = tf.compat.v1.Session(graph=self.graph)
+        with self.sess.as_default():
+            with self.graph.as_default():
+                tf.global_variables_initializer().run()
+                saver = tf.compat.v1.train.import_meta_graph(checkpoint_path + ".meta")
+                saver.restore(self.sess, checkpoint_path)
 
     def get_cards_order(self, trick, played_tricks, suits_order, contract_value):
         # Create observation
@@ -80,7 +83,9 @@ class AIPlayer(Player):
                                             trick_cards_observation,
                                             [contract_value / 9, self.attacker]))
         trick_observation = np.expand_dims(trick_observation, axis=0)
-        actions = self.sess.run(self.output_tensor, {self.input_tensor: trick_observation})
+        with self.sess.as_default():
+            with self.graph.as_default():
+                actions = self.sess.run(self.output_tensor, {self.input_tensor: trick_observation})
         action = np.squeeze(actions, axis=0)
 
         player_cards_observation = convert_cards_to_vector(self.cards, suits_order)

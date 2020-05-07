@@ -1,18 +1,18 @@
 import numpy as np
 import random
 
-from coinche.player import RandomPlayer
+from coinche.player import RandomPlayer, AIPlayer
 from coinche.gym.player import GymPlayer
 from coinche.trick import Trick
 from coinche.deck import Deck
 from coinche.card import Suit
-from coinche.utils import convert_cards_to_vector, convert_index_to_cards
+from coinche.utils import convert_cards_to_vector
 
 from gym import Env, spaces
 
 
 class GymCoinche(Env):
-    def __init__(self):
+    def __init__(self, players=None):
         # observation_space
         # 32 played cards + 32 player cards + 32 cards of current trick + contract_value + attacker
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
@@ -22,8 +22,11 @@ class GymCoinche(Env):
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
         self.action_space = spaces.Box(low=0, high=1, shape=(32,))
 
-        self.players = [
-            RandomPlayer(0, "N"), RandomPlayer(1, "E"), GymPlayer(2, "S"), RandomPlayer(3, "W")
+        self.players = players if players is not None else [
+            RandomPlayer(0, "N"),
+            RandomPlayer(1, "E"),
+            GymPlayer(2, "S"),
+            RandomPlayer(3, "W")
         ]
         self.current_trick_rotation = []
         self.deck = Deck()
