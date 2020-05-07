@@ -18,10 +18,10 @@ env_params = GymVectorEnvironment(level='coinche-v0')
 ####################
 # Graph Scheduling #
 ####################
-num_round_improve_steps = 80
-num_round_heatup = 8
-num_round_training = 300
-num_round_evaluation = 10
+num_round_improve_steps = 100
+num_round_heatup = 100
+num_round_training = 10000
+num_round_evaluation = 100
 
 schedule_params = ScheduleParameters()
 schedule_params.improve_steps = EnvironmentEpisodes(num_round_improve_steps)

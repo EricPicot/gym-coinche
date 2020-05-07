@@ -4,11 +4,13 @@ from coinche.deck import Deck
 from coinche.card import Card, Rank, Suit
 from coinche.exceptions import PlayException
 from gym import Env, spaces
-
+import time
 import numpy as np
 import random
 
 from coinche.reward_prediction import decision_process
+
+random_contrat = True
 
 class GymCoinche(Env):
     def __init__(self):
@@ -53,27 +55,36 @@ class GymCoinche(Env):
         done = self._play_step(action)
         if not done:
             observation = self._get_trick_observation()
-            current_player = self.current_trick_rotation[0]
             last_trick = self.played_tricks[-1]
-            reward = self._get_trick_reward(last_trick, current_player)
+
+            reward = self._get_trick_reward(last_trick)
             winning_team = 0 if last_trick.winner.index % 2 == 0 else 1
             info = {'winner': last_trick.winner.index,
                     'winning_team': winning_team}
             return observation, reward, done, info
         else:
             observation = self._get_round_observation()
-            # TODO: define round reward
-            reward = self._get_round_reward()
+            last_trick = self.played_tricks[-1]
+            reward = self._get_trick_reward(last_trick)
             info = {"player0-hand": self.player0_original_hand,
                     "player2-hand": self.player2_original_hand}
             return observation, reward, done, info
 
-    def _get_trick_reward(self, trick, player):
+    def _get_trick_reward(self, trick):
         score = trick.score()
-        score_factor = player.index % 2 == trick.winner.index % 2
-        return score * score_factor
+        return score * self.trick_score_factor
 
-    def _get_round_reward(self):
+    def _get_round_reward(self, total_reward):
+        reward = self._get_trick_reward(last_trick, current_player)
+        total_reward += reward
+        if (self.attacker_team == 0) and ((total_reward / 10 - 8) / 9 >= self.value):
+            round_reward = 50
+        if (self.attacker_team == 0) and ((total_reward / 10 - 8) / 9 >= self.value):
+            round_reward = 30  # good defense
+
+        else:
+            round_reward = -20
+        print("contrat: ", self.value, "done ?:"(total_reward / 10 - 8) / 9 >= self.value, round_reward)
         return 1
 
     def _play_reset(self):
@@ -97,7 +108,13 @@ class GymCoinche(Env):
         self._deal_cards()
 
         # Get value of the contract and attacker team and updates suits order
-        self.set_contrat()
+        if random_contrat:
+            self.atout_suit = random.choice(self.suits_order)  # select randomly the suit
+            self.value = random.randint(0, 1)  # Can only announce 80 or 90 to begin with
+            self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+            self.suits_order = self._define_suits_order(self.suits_order)
+        else:
+            self.set_contrat()
 
         # Set players attacker
         for p in self.players:
@@ -145,6 +162,7 @@ class GymCoinche(Env):
 
     def _play_step(self, action):
         # AI has to play
+        ai_player_position = self.current_trick_rotation[0]
         self._play_ai(action)
         # Then play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
@@ -153,6 +171,7 @@ class GymCoinche(Env):
         winner = self.trick.winner
         # add score to teams
         self.played_tricks.append(self.trick)
+        self.trick_score_factor = ai_player_position.index % 2 == winner.index % 2
 
         # should stop if trick_number==8
         if len(self.played_tricks) == 8:
@@ -200,7 +219,7 @@ class GymCoinche(Env):
         player_cards_observation = self._create_cards_observation(current_player.cards)
         trick_cards_observation = self._create_cards_observation(self.trick.cards)
         attacker = current_player.attacker
-        contract_value = self.value / 9
+        contract_value = self.value
         observation = np.concatenate((played_cards_observation,
                                       player_cards_observation,
                                       trick_cards_observation,
@@ -294,7 +313,6 @@ class GymCoinche(Env):
         self.suits_order = self._define_suits_order(self.suits_order)
 
         self.value = np.max([0,(expected_reward_team//10) - 8])/9
-
         self.attacker_team = attacker_team
 
     def shifting_hand(hand, value=0):
