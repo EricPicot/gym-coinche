@@ -35,7 +35,7 @@ $ pip install requirements.txt
 
 # to run a coach preset
 
-$ coach -p ./preset.py -e coinche -ep ./experiments/
+$ coach -p ./preset.py -e coinche -ep ./experiments/ -s 30 -c
 ```
 
 ## Contributing

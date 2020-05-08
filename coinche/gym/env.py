@@ -1,19 +1,20 @@
-from coinche.player import AIPlayer, RandomPlayer
-from coinche.trick import Trick
-from coinche.deck import Deck
-from coinche.card import Card, Rank, Suit
-from coinche.exceptions import PlayException
-from gym import Env, spaces
-import time
 import numpy as np
 import random
 
+from coinche.player import RandomPlayer, AIPlayer
+from coinche.gym.player import GymPlayer
+from coinche.trick import Trick
+from coinche.deck import Deck
+from coinche.card import Suit
+from coinche.utils import convert_cards_to_vector
 from coinche.reward_prediction import decision_process
 
-random_contrat = True
+from gym import Env, spaces
+from tensorflow.keras import models
+
 
 class GymCoinche(Env):
-    def __init__(self):
+    def __init__(self, players=None, contrat_model_path=None):
         # observation_space
         # 32 played cards + 32 player cards + 32 cards of current trick + contract_value + attacker
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
@@ -23,8 +24,11 @@ class GymCoinche(Env):
         # 8 atouts + 8 suit 1 + 8 suit 2 + 8 suit 3
         self.action_space = spaces.Box(low=0, high=1, shape=(32,))
 
-        self.players = [
-            RandomPlayer(0, "N"), RandomPlayer(1, "E"), AIPlayer(2, "S"), RandomPlayer(3, "W")
+        self.players = players if players is not None else [
+            RandomPlayer(0, "N"),
+            RandomPlayer(1, "E"),
+            GymPlayer(2, "S"),
+            RandomPlayer(3, "W")
         ]
         self.current_trick_rotation = []
         self.deck = Deck()
@@ -33,15 +37,49 @@ class GymCoinche(Env):
         self.trick = None
         self.atout_suit = None
         self.value = None
+        self.suits_order = None
+        self.contrat_model = models.load_model(contrat_model_path) if contrat_model_path is not None else None
         self.attacker_team = 0
-
+        self.original_hands = {}
 
     def reset(self):
         """
         reset is mandatory to use gym framework. Reset is called at the end of each round (8 tricks)
         :return: observation
         """
-        self._play_reset()
+        # New round
+        self.round_number += 1
+
+        # We rebuild the deck based on previous trick won by each players
+        self._rebuild_deck(self.played_tricks)
+        self._deal_cards()
+        self.played_tricks = []
+
+        # Get value of the contract and attacker team and updates suits order
+        if self.contrat_model is None:
+            self.atout_suit = random.choice(list(Suit))  # select randomly the suit
+            self.value = random.randint(0, 1)  # Can only announce 80 or 90 to begin with
+            self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
+            self.suits_order = Suit.create_order(self.atout_suit)
+        else:
+            self._set_contrat(self.contrat_model)
+
+        # Set players attacker
+        for p in self.players:
+            p.attacker = int(self.attacker_team == p.index % 2)
+
+        self.original_hands = {
+            "player0-hand": convert_cards_to_vector(self.players[0].cards, self.suits_order),
+            "player1-hand": convert_cards_to_vector(self.players[1].cards, self.suits_order),
+            "player2-hand": convert_cards_to_vector(self.players[2].cards, self.suits_order),
+            "player3-hand": convert_cards_to_vector(self.players[3].cards, self.suits_order)
+        }
+
+        self.trick = Trick(self.atout_suit, trick_number=1)
+        self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
+
+        # Play until AI
+        self._play_until_end_of_rotation_or_ai_play()
         observation = self._get_trick_observation()
         return observation
 
@@ -52,93 +90,62 @@ class GymCoinche(Env):
         :param action:
         :return: observation, reward, done, info
         """
-        done = self._play_step(action)
-        if not done:
-            observation = self._get_trick_observation()
-            last_trick = self.played_tricks[-1]
+        # Play for gym player
+        ai_player = self.current_trick_rotation[0]
+        ai_player.set_next_action(action)
+        ai_player.play_turn(self.trick, self.played_tricks, self.suits_order, self.value)
+        self.current_trick_rotation.pop(0)
+        # Then play until end of trick
+        self._play_until_end_of_rotation_or_ai_play()
+        # Handle end of trick
+        winner = self.trick.winner
+        trick_score_factor = ai_player.index % 2 == winner.index % 2
+        reward = self._get_trick_reward(self.trick, trick_score_factor)
+        # add score to teams
+        self.played_tricks.append(self.trick)
 
-            reward = self._get_trick_reward(last_trick)
-            winning_team = 0 if last_trick.winner.index % 2 == 0 else 1
-            info = {'winner': last_trick.winner.index,
+        if len(self.played_tricks) < 8:
+            self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
+            # Choose next starter
+            self.current_trick_rotation = self._create_trick_rotation(winner.index)
+            # Play until AI
+            self._play_until_end_of_rotation_or_ai_play()
+            observation = self._get_trick_observation()
+            winning_team = 0 if winner.index % 2 == 0 else 1
+            info = {'winner': winner.index,
                     'winning_team': winning_team}
-            return observation, reward, done, info
+            return observation, reward, False, info
         else:
             observation = self._get_round_observation()
-            last_trick = self.played_tricks[-1]
-            reward = self._get_trick_reward(last_trick)
-            info = {"player0-hand": self.player0_original_hand,
-                    "player2-hand": self.player2_original_hand}
-            return observation, reward, done, info
+            info = self.original_hands
+            return observation, reward, True, info
 
-    def _get_trick_reward(self, trick):
-        score = trick.score()
-        return score * self.trick_score_factor
+    def _set_contrat(self, contrat_model):
+        default_suit_order = list(Suit)
 
-    def _get_round_reward(self, total_reward):
-        reward = self._get_trick_reward(last_trick, current_player)
-        total_reward += reward
-        if (self.attacker_team == 0) and ((total_reward / 10 - 8) / 9 >= self.value):
-            round_reward = 50
-        if (self.attacker_team == 0) and ((total_reward / 10 - 8) / 9 >= self.value):
-            round_reward = 30  # good defense
+        hand0 = convert_cards_to_vector(self.players[0].cards, default_suit_order)
+        hand1 = convert_cards_to_vector(self.players[1].cards, default_suit_order)
+        hand2 = convert_cards_to_vector(self.players[2].cards, default_suit_order)
+        hand3 = convert_cards_to_vector(self.players[3].cards, default_suit_order)
 
+        shift_team1, expected_reward_team1 = decision_process(hand0, hand2, contrat_model)
+        shift_team2, expected_reward_team2 = decision_process(hand1, hand3, contrat_model)
+
+        if expected_reward_team1 > expected_reward_team2:
+            expected_reward_team = expected_reward_team1
+            attacker_team = 0
+            shift = shift_team1
         else:
-            round_reward = -20
-        print("contrat: ", self.value, "done ?:"(total_reward / 10 - 8) / 9 >= self.value, round_reward)
-        return 1
+            expected_reward_team = expected_reward_team2
+            attacker_team = 1
+            shift = shift_team2
 
-    def _play_reset(self):
-        """
-        Function called in the reset function. Called at each new round. Once all the important values are reset, and
-        given the trick id (between 0 and 7) we define the first player of the first trick using np.roll.
+        # Carefull: shifting is anti-clockwise
+        self.atout_suit = default_suit_order[-shift]
+        self.suits_order = Suit.create_order(self.atout_suit)
 
-        :return:
-        """
-
-        self.suits_order = [suit for suit in Suit]
-
-        # Select color and value
-        self.round_number += 1
-
-        # We rebuild the deck based on previous trick won by each players
-        self._rebuild_deck(self.played_tricks)
-        self.played_tricks = []
-
-        # -----
-        self._deal_cards()
-
-        # Get value of the contract and attacker team and updates suits order
-        if random_contrat:
-            self.atout_suit = random.choice(self.suits_order)  # select randomly the suit
-            self.value = random.randint(0, 1)  # Can only announce 80 or 90 to begin with
-            self.attacker_team = random.randint(0, 1)  # 0 if it is team 0 (player 0 and player 2) else 1 for team 1
-            self.suits_order = self._define_suits_order(self.suits_order)
-        else:
-            self.set_contrat()
-
-        # Set players attacker
-        for p in self.players:
-            if self.attacker_team == 0:
-                if p.index % 2 == 0:
-                    p.attacker = 1
-                else:
-                    p.attacker = 0
-            elif self.attacker_team == 1:
-                if p.index % 2 == 1:
-                    p.attacker = 1
-                else:
-                    p.attacker = 0
-        #  -----
-        for p in self.players:
-            p.reset_round()
-
-        # shifting_hand(hand) for p in Players for hand in p.hand
-        self.player0_original_hand = self._create_cards_observation(self.players[0].cards)
-        self.player2_original_hand = self._create_cards_observation(self.players[2].cards)
-
-        self.trick = Trick(self.atout_suit, trick_number=1)
-        self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
-        self._play_until_end_of_rotation_or_ai_play()
+        self.value = np.max([0, (expected_reward_team//10) - 8])/9
+        self.attacker_team = attacker_team
 
     def _rebuild_deck(self, played_tricks):
         # Check if duplicated cards
@@ -153,57 +160,49 @@ class GymCoinche(Env):
         This function deals the deck
         """
         players_round = np.roll(self.players, self.round_number)
-        legalDealingSequences = [[3, 3, 2], [3, 2, 3]]  # Defining academic dealing sequences
-        dealingSequence = legalDealingSequences[random.randint(0, 1)]  # Choose the Dealing Sequence
-        for cardsToDeal in dealingSequence:
+        legal_dealing_sequences = [[3, 3, 2], [3, 2, 3]]  # Defining academic dealing sequences
+        dealing_sequence = legal_dealing_sequences[random.randint(0, 1)]  # Choose the Dealing Sequence
+        for cards_to_deal in dealing_sequence:
             for p in players_round:  # Stopping condition on one round
-                p.add_cards(self.deck.deal(cardsToDeal))
+                p.add_cards(self.deck.deal(cards_to_deal))
 
-
-    def _play_step(self, action):
-        # AI has to play
-        ai_player_position = self.current_trick_rotation[0]
-        self._play_ai(action)
-        # Then play until end of trick
-        self._play_until_end_of_rotation_or_ai_play()
-
-        # Handle end of trick
-        winner = self.trick.winner
-        # add score to teams
-        self.played_tricks.append(self.trick)
-        self.trick_score_factor = ai_player_position.index % 2 == winner.index % 2
-
-        # should stop if trick_number==8
-        if len(self.played_tricks) == 8:
-            return True
-
-        self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
-        # Choose next starter
-        self.current_trick_rotation = self._create_trick_rotation(winner.index)
-        # Play until AI
-        self._play_until_end_of_rotation_or_ai_play()
-        return False
-
-    def _play_ai(self, action):
-        current_player = self.current_trick_rotation[0]
-        player_cards_observation = self._create_cards_observation(current_player.cards)
-        player_action_masked = player_cards_observation * action / np.sum(action)
-        # Play cards in probability order
-        if np.max(player_action_masked) > 0:
-            cards_index = np.argsort(-player_action_masked)
-        else:
-            cards_index = np.argsort(-player_cards_observation)
-        for card_index in cards_index:
-            try:
-                card_rank = (card_index % 8)
-                card_suit = int(card_index / 8)
-                card = Card(Rank(card_rank), Suit(self.suits_order[card_suit]))
-                self.trick.add_card(card, current_player)
-                current_player.remove_card(card)
-                self.current_trick_rotation.pop(0)
+    def _play_until_end_of_rotation_or_ai_play(self):
+        """
+        When this method is called it is either:
+        - An AIPlayer's turn: therefore we break and ask the AIPlayer to give prediction
+        - Not an AIPlayer: therefore the current player just play given is deterministic (or random) policy
+        :return:
+        """
+        while len(self.current_trick_rotation) > 0:
+            current_player = self.current_trick_rotation[0]
+            if isinstance(current_player, GymPlayer):
                 break
-            except PlayException:
-                continue
+            current_player.play_turn(self.trick, self.played_tricks, self.suits_order, self.value)
+            self.current_trick_rotation.pop(0)
+
+    def _get_trick_observation(self):
+        # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
+        played_cards = [card for trick in self.played_tricks for card in trick.cards]
+        played_cards_observation = convert_cards_to_vector(played_cards, self.suits_order)
+        current_player = self.current_trick_rotation[0]
+        player_cards_observation = convert_cards_to_vector(current_player.cards, self.suits_order)
+        trick_cards_observation = convert_cards_to_vector(self.trick.cards, self.suits_order)
+        observation = np.concatenate((played_cards_observation,
+                                      player_cards_observation,
+                                      trick_cards_observation,
+                                      [self.value, current_player.attacker]))
+        return observation
+
+    def _get_round_observation(self):
+        # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
+        played_cards_observation = np.ones(32)
+        player_cards_observation = np.zeros(32)
+        trick_cards_observation = convert_cards_to_vector(self.trick.cards, self.suits_order)
+        observation = np.concatenate((played_cards_observation,
+                                      player_cards_observation,
+                                      trick_cards_observation,
+                                      [self.value, 1]))
+        return observation
 
     def _create_trick_rotation(self, starting_player_index):
         rotation = np.array(self.players)
@@ -211,109 +210,6 @@ class GymCoinche(Env):
             rotation = np.roll(rotation, 1)
         return rotation.tolist()
 
-    def _get_trick_observation(self):
-        # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
-        played_cards = [card for trick in self.played_tricks for card in trick.cards]
-        played_cards_observation = self._create_cards_observation(played_cards)
-        current_player = self.current_trick_rotation[0]
-        player_cards_observation = self._create_cards_observation(current_player.cards)
-        trick_cards_observation = self._create_cards_observation(self.trick.cards)
-        attacker = current_player.attacker
-        contract_value = self.value
-        observation = np.concatenate((played_cards_observation,
-                                      player_cards_observation,
-                                      trick_cards_observation,
-                                      [contract_value, attacker]))
-        return observation
-
-    def _get_round_observation(self):
-        # self.observation_space = [spaces.Discrete(2)] * (32 + 32 + 32) + [spaces.Discrete(10), spaces.Discrete(2)]
-        played_cards_observation = np.ones(32)
-        player_cards_observation = np.zeros(32)
-        trick_cards_observation = self._create_cards_observation(self.trick.cards)
-        # TODO: to do
-        attacker = 1
-        contract_value = self.value
-        observation = np.concatenate((played_cards_observation,
-                                      player_cards_observation,
-                                      trick_cards_observation,
-                                      [contract_value, attacker]))
-        return observation
-
-    def _create_cards_observation(self, cards):
-        cards_observation = np.zeros(32)
-
-        for card in cards:
-            if card.suit == -1:
-                continue
-            suit_position = self.suits_order.index(card.suit)
-            rank_position = card.rank.value
-            card_position = rank_position + (suit_position * 8)
-            np.put(cards_observation, card_position, 1)
-        return cards_observation
-
-    def _play_until_end_of_rotation_or_ai_play(self):
-        """
-        When this method is called it is either:
-        - An AIPlayer's turn: therefore we break and ask the AIPlayer to give prediction
-        - Not an AIPlayer: therefore the current player just play given is deterministic (or random) policy
-
-        :return:
-        """
-        while len(self.current_trick_rotation) > 0:
-            current_player = self.current_trick_rotation[0]
-            if isinstance(current_player, AIPlayer):
-                break
-
-            # Ask not ai player to player (could be random)
-            if not isinstance(current_player, AIPlayer):
-                while True:
-                    # TODO: dev a deterministic player
-                    try:
-                        # TODO: play_turn
-                        card = current_player.get_random()
-                        self.trick.add_card(card, current_player)
-                        current_player.remove_card(card)
-                        self.current_trick_rotation.pop(0)
-                        break
-                    except PlayException as e:
-                        continue
-
-    def _define_suits_order(self, suits_order):
-        tmp_suits_order = np.array(suits_order)
-        while True:
-            if tmp_suits_order[0] == self.atout_suit:
-                break
-            tmp_suits_order = np.roll(tmp_suits_order, 1)
-        return tmp_suits_order.tolist()
-
-
-    def set_contrat(self):
-
-        hand0 = self._create_cards_observation(self.players[0].cards)
-        hand1 = self._create_cards_observation(self.players[1].cards)
-        hand2 = self._create_cards_observation(self.players[2].cards)
-        hand3 = self._create_cards_observation(self.players[3].cards)
-
-        shift_team1, expected_reward_team1 = decision_process(hand0, hand2)
-        shift_team2, expected_reward_team2 = decision_process(hand1, hand3)
-
-        if expected_reward_team1 > expected_reward_team2:
-            expected_reward_team = expected_reward_team1
-            attacker_team = 0
-            shift = shift_team1
-        else:
-            expected_reward_team = expected_reward_team2
-            attacker_team = 1
-            shift = shift_team2
-
-        # Carefull: shifting is anti-clockwise
-        self.atout_suit = self.suits_order[-shift]
-
-        self.suits_order = self._define_suits_order(self.suits_order)
-
-        self.value = np.max([0,(expected_reward_team//10) - 8])/9
-        self.attacker_team = attacker_team
-
-    def shifting_hand(hand, value=0):
-        return np.roll(hand, value * 8)  # shifted hand
+    def _get_trick_reward(self, trick, trick_score_factor):
+        score = trick.score()
+        return score * trick_score_factor

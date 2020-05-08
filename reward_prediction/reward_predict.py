@@ -48,7 +48,6 @@ xtrain = xtrain.reshape((xtrain.shape[0], xtrain.shape[1], 1))
 xtest = xtest.reshape((xtest.shape[0], xtest.shape[1], 1))
 
 epochs=50
-relu_class_weigth_model.fit(x = xtrain.reshape(80000, 64), y = ytrain, epochs=epochs, batch_size=256,
-          validation_data=(xtest.reshape(20000, 64), ytest), class_weight=class_weights)
+relu_class_weigth_model.fit(x = xtrain.reshape(xtrain.shape[0], 64), y = ytrain, epochs=epochs, batch_size=256, class_weight=class_weights)
 
 models.save_model(relu_class_weigth_model, "./reward_model.h5")
