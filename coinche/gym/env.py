@@ -45,6 +45,7 @@ class GymCoinche(Env):
         :return: observation
         """
         self._reset_round()
+        # Play until AI
         self._play_until_end_of_rotation_or_ai_play()
         observation = self._get_trick_observation()
         return observation
@@ -57,7 +58,10 @@ class GymCoinche(Env):
         :return: observation, reward, done, info
         """
         self._play_gym(action)
+        # Play until end of trick
         done = self._play_step()
+        # If not done:
+        # Play until AI
         if not done:
             observation = self._get_trick_observation()
             current_player = self.current_trick_rotation[0]
@@ -132,24 +136,21 @@ class GymCoinche(Env):
         # Then play until end of trick
         self._play_until_end_of_rotation_or_ai_play()
 
-        if len(self.current_trick_rotation) == 0:
-            # Handle end of trick
-            winner = self.trick.winner
-            # add score to teams
-            self.played_tricks.append(self.trick)
+        # Handle end of trick
+        winner = self.trick.winner
+        # add score to teams
+        self.played_tricks.append(self.trick)
 
-            # should stop if trick_number==8
-            if len(self.played_tricks) == 8:
-                return True
+        # should stop if trick_number==8
+        if len(self.played_tricks) == 8:
+            return True
 
-            self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
-            # Choose next starter
-            self.current_trick_rotation = self._create_trick_rotation(winner.index)
-            # Play until AI
-            self._play_until_end_of_rotation_or_ai_play()
-            return False
-        else:
-            return False
+        self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
+        # Choose next starter
+        self.current_trick_rotation = self._create_trick_rotation(winner.index)
+        # Play until AI
+        self._play_until_end_of_rotation_or_ai_play()
+        return False
 
     def _play_gym(self, action):
         current_player = self.current_trick_rotation[0]
