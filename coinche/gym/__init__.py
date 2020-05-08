@@ -10,10 +10,27 @@ register(
 register(
     id='coinche-v1',
     entry_point='coinche.gym.env:GymCoinche',
-    kwargs={'players': [
-            AIPlayer("./experiments/coinche/07_05_2020-14_22/checkpoint/0_Step-354.ckpt", 0, "N"),
+    kwargs={
+        'players': [
+            RandomPlayer(0, "N"),
             RandomPlayer(1, "E"),
             GymPlayer(2, "S"),
             RandomPlayer(3, "W")
-            ]}
+        ],
+        'contrat_model_path': './reward_prediction/reward_model.h5'
+    }
+)
+
+register(
+    id='coinche-v2',
+    entry_point='coinche.gym.env:GymCoinche',
+    kwargs={
+        'players': [
+            AIPlayer("./experiments/coinche/08_05_2020-15_38/checkpoint/2_Step-878.ckpt", 0, "N"),
+            RandomPlayer(1, "E"),
+            GymPlayer(2, "S"),
+            RandomPlayer(3, "W")
+        ],
+        'contrat_model_path': './reward_prediction/reward_model.h5'
+    }
 )
