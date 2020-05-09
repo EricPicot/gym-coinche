@@ -40,8 +40,8 @@ reward_list = np.array(reward_list).reshape((len(reward_list), 1))
 data = np.concatenate([player_0_hands, player_2_hands, reward_list], axis=1)
 
 df = pd.DataFrame(data)
-df.to_csv("../reward_prediction/data/random_hands_and_reward.csv")
+df.to_csv("reward_prediction/data/random_hands_and_reward.csv")
 
 pd.DataFrame(attacker_list, columns=["p0", "p1", "p2", "p3"])\
-    .to_csv("../reward_prediction/data/random_attacker_teams.csv")
+    .to_csv("reward_prediction/data/random_attacker_teams.csv")
 print("Done")
