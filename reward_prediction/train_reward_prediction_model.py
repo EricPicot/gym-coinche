@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split as tts
 
 
-data = pd.read_csv('data/hands_and_reward.csv')
+data = pd.read_csv('data/random_hands_and_reward.csv')
 data = data.drop("Unnamed: 0", axis=1)
 
 suit = ["atout", "na_1", "na_2", "na_3"]

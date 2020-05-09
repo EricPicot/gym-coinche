@@ -5,9 +5,11 @@ import pandas as pd
 reward_list = []
 player_0_hands = []
 player_2_hands = []
-NUM_EPISODES = 100000
+attacker_list = []
+NUM_EPISODES = 1000
 
 env = gym.make('coinche.gym.env:coinche-v0')
+
 env.__init__()
 
 for i_episode in range(NUM_EPISODES):
@@ -26,6 +28,7 @@ for i_episode in range(NUM_EPISODES):
             reward_list.append(total_round_reward)
             player_0_hands.append(info["player0-hand"])
             player_2_hands.append(info["player2-hand"])
+            attacker_list.append(info["attacker_team"])
             break
 
     env.close()  # Close the environment
@@ -37,4 +40,8 @@ reward_list = np.array(reward_list).reshape((len(reward_list), 1))
 data = np.concatenate([player_0_hands, player_2_hands, reward_list], axis=1)
 
 df = pd.DataFrame(data)
-df.to_csv("hands_and_reward.csv")
+df.to_csv("../reward_prediction/data/random_hands_and_reward.csv")
+
+pd.DataFrame(attacker_list, columns=["p0", "p1", "p2", "p3"])\
+    .to_csv("../reward_prediction/data/random_attacker_teams.csv")
+print("Done")

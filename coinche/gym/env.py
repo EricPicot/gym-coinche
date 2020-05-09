@@ -39,6 +39,7 @@ class GymCoinche(Env):
         self.value = None
         self.suits_order = None
         self.contrat_model = models.load_model(contrat_model_path) if contrat_model_path is not None else None
+        print("Contrat model passed: ", contrat_model_path)
         self.attacker_team = 0
         self.original_hands = {}
 
@@ -72,7 +73,8 @@ class GymCoinche(Env):
             "player0-hand": convert_cards_to_vector(self.players[0].cards, self.suits_order),
             "player1-hand": convert_cards_to_vector(self.players[1].cards, self.suits_order),
             "player2-hand": convert_cards_to_vector(self.players[2].cards, self.suits_order),
-            "player3-hand": convert_cards_to_vector(self.players[3].cards, self.suits_order)
+            "player3-hand": convert_cards_to_vector(self.players[3].cards, self.suits_order),
+            "attacker_team": [p.attacker for p in self.players]
         }
 
         self.trick = Trick(self.atout_suit, trick_number=1)

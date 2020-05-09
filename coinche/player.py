@@ -72,6 +72,15 @@ class AIPlayer(Player):
                 saver = tf.compat.v1.train.import_meta_graph(checkpoint_path + ".meta")
                 saver.restore(self.sess, checkpoint_path)
 
+    def get_action(self, observation):
+
+        with self.sess.as_default():
+            with self.graph.as_default():
+                actions = self.sess.run(self.output_tensor, {self.input_tensor: observation})
+        action = np.squeeze(actions, axis=0)
+        return action
+
+
     def get_cards_order(self, trick, played_tricks, suits_order, contract_value):
         # Create observation
         played_cards = [card for trick in played_tricks for card in trick.cards]
