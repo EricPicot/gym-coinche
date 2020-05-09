@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import pandas as pd
 from coinche.player import AIPlayer, RandomPlayer
-
+from coinche.gym.env import GymPlayer
 
 def policy_competition(policies, env_name = "coinche-v3",
                        contrat_model_path=None, NUM_EPISODES=40000):
@@ -18,12 +18,12 @@ def policy_competition(policies, env_name = "coinche-v3",
 
     for i, p in enumerate(policies):
         if p == "Random":
-            if isinstance((env.players[i], GymPlayer):
+            if isinstance(env.players[i], GymPlayer):
                 local_player = RandomPlayer(i, "N")
             else:
                 env.players[i] = RandomPlayer(i, "N")
         else:
-            if isinstance((env.players[i], GymPlayer):
+            if isinstance(env.players[i], GymPlayer):
                 local_player = AIPlayer(p, i, "N")
             else:
                 env.players[i] = AIPlayer(p, i, "N")
