@@ -4,25 +4,25 @@ from coinche.gym.player import GymPlayer
 import os
 print(os.listdir())
 
-
-register(
-    id='coinche-v0',
-    entry_point='coinche.gym.env:GymCoinche'
-)
-
-register(
-    id='coinche-v1',
-    entry_point='coinche.gym.env:GymCoinche',
-    kwargs={
-        'players': [
-            RandomPlayer(0, "N"),
-            RandomPlayer(1, "E"),
-            GymPlayer(2, "S"),
-            RandomPlayer(3, "W")
-        ],
-        'contrat_model_path': './reward_prediction/reward_model.h5'
-    }
-)
+#
+# register(
+#     id='coinche-v0',
+#     entry_point='coinche.gym.env:GymCoinche'
+# )
+#
+# register(
+#     id='coinche-v1',
+#     entry_point='coinche.gym.env:GymCoinche',
+#     kwargs={
+#         'players': [
+#             RandomPlayer(0, "N"),
+#             RandomPlayer(1, "E"),
+#             GymPlayer(2, "S"),
+#             RandomPlayer(3, "W")
+#         ],
+#         'contrat_model_path': './reward_prediction/reward_model.h5'
+#     }
+# )
 #
 # register(
 #     id='coinche-v2',
