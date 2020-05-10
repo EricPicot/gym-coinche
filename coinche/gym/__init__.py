@@ -10,19 +10,19 @@ print(os.listdir())
 #     entry_point='coinche.gym.env:GymCoinche'
 # )
 #
-# register(
-#     id='coinche-v1',
-#     entry_point='coinche.gym.env:GymCoinche',
-#     kwargs={
-#         'players': [
-#             RandomPlayer(0, "N"),
-#             RandomPlayer(1, "E"),
-#             GymPlayer(2, "S"),
-#             RandomPlayer(3, "W")
-#         ],
-#         'contrat_model_path': './reward_prediction/reward_model.h5'
-#     }
-# )
+register(
+    id='coinche-v1',
+    entry_point='coinche.gym.env:GymCoinche',
+    kwargs={
+        'players': [
+            RandomPlayer(0, "N"),
+            RandomPlayer(1, "E"),
+            GymPlayer(2, "S"),
+            RandomPlayer(3, "W")
+        ],
+        'contrat_model_path': './reward_prediction/reward_model.h5'
+    }
+)
 #
 # register(
 #     id='coinche-v2',
@@ -48,5 +48,19 @@ register(
             GymPlayer(2, "S"),
             RandomPlayer(3, "W"),
         ],
+    }
+)
+
+register(
+    id='coinche-v4',
+    entry_point='coinche.gym.env:GymCoinche',
+    kwargs={
+        'players': [
+            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 0, "N"),
+            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 1, "E"),
+            GymPlayer(2, "S"),
+            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 3, "W")
+        ],
+        'contrat_model_path': './reward_prediction/reward_model.h5'
     }
 )

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from coinche.player import AIPlayer, RandomPlayer
 from coinche.gym.env import GymPlayer
+from tensorflow.keras import models
 
 def policy_competition(policies, env_name = "coinche-v3",
                        contrat_model_path=None, NUM_EPISODES=40000):
@@ -29,6 +30,7 @@ def policy_competition(policies, env_name = "coinche-v3",
                 env.players[i] = AIPlayer(p, i, "N")
 
     env.contrat_model_path = contrat_model_path
+    env.contrat_model = models.load_model(env.contrat_model_path) if env.contrat_model_path is not None else None
     for i_episode in range(NUM_EPISODES):
         observation = env.reset()
         total_round_reward = 0
