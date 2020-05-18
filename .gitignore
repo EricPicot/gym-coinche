@@ -144,5 +144,6 @@ cython_debug/
 media
 static
 
+*.h5
 experiments
 reward_prediction/data/
