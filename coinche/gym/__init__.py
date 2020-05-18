@@ -51,16 +51,16 @@ register(
     }
 )
 
-register(
-    id='coinche-v4',
-    entry_point='coinche.gym.env:GymCoinche',
-    kwargs={
-        'players': [
-            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 0, "N"),
-            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 1, "E"),
-            GymPlayer(2, "S"),
-            AIPlayer("./experiments/coinche/09_05_2020-15_13/checkpoint/311_Step-79961.ckpt", 3, "W")
-        ],
-        'contrat_model_path': './reward_prediction/reward_model.h5'
-    }
-)
+# register(
+#     id='coinche-v4',
+#     entry_point='coinche.gym.env:GymCoinche',
+#     kwargs={
+#         'players': [
+#             AIPlayer("./experiments/coinche/11_05_2020-14_54/checkpoint/0_Step-3419.ckpt", 0, "N"),
+#             AIPlayer("./experiments/coinche/11_05_2020-14_54/checkpoint/0_Step-3419.ckpt", 1, "E"),
+#             GymPlayer(2, "S"),
+#             AIPlayer("./experiments/coinche/11_05_2020-14_54/checkpoint/0_Step-3419.ckpt", 3, "W")
+#         ],
+#         'contrat_model_path': './reward_prediction/reward_model.h5'
+#     }
+# )

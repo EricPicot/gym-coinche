@@ -48,7 +48,7 @@ def policy_competition(policies, env_name = "coinche-v3",
             observation, reward, done, info = env.step(action)  # to take a single step in the environment
             total_round_reward += reward
             if done:
-                reward_list.append(total_round_reward)
+                reward_list.append(info["total_reward"])
                 player_0_hands.append(info["player0-hand"])
                 player_1_hands.append(info["player1-hand"])
                 player_2_hands.append(info["player2-hand"])

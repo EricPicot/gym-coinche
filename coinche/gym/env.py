@@ -76,7 +76,7 @@ class GymCoinche(Env):
             "player3-hand": convert_cards_to_vector(self.players[3].cards, self.suits_order),
             "attacker_team": [p.attacker for p in self.players]
         }
-
+        self.total_score = 0
         self.trick = Trick(self.atout_suit, trick_number=1)
         self.current_trick_rotation = self._create_trick_rotation(self.round_number % 4)
 
@@ -102,9 +102,15 @@ class GymCoinche(Env):
         # Handle end of trick
         winner = self.trick.winner
         trick_score_factor = ai_player.index % 2 == winner.index % 2
-        reward = self._get_trick_reward(self.trick, trick_score_factor)
+        reward = self._get_reward(self.trick,
+                                  self.total_score,
+                                  trick_score_factor,
+                                  self.value)
         # add score to teams
         self.played_tricks.append(self.trick)
+
+        # Add trick score to total_score
+        self.total_score += self._get_trick_reward(self.trick, trick_score_factor)
 
         if len(self.played_tricks) < 8:
             self.trick = Trick(self.atout_suit, trick_number=len(self.played_tricks) + 1)
@@ -120,6 +126,7 @@ class GymCoinche(Env):
         else:
             observation = self._get_round_observation()
             info = self.original_hands
+            info["total_reward"] = self.total_score
             return observation, reward, True, info
 
     def _set_contrat(self, contrat_model):
@@ -215,3 +222,22 @@ class GymCoinche(Env):
     def _get_trick_reward(self, trick, trick_score_factor):
         score = trick.score()
         return score * trick_score_factor
+
+    def _get_reward(self, trick, total_score, trick_score_factor, value, normalisation_trick=10):
+        # trick reward: if not last trick
+        # if trick.trick_number < 8:
+        if True:
+            score = trick.score()
+            if trick_score_factor:
+                return score  / normalisation_trick
+            else:
+                return - score / normalisation_trick
+
+        # if this is last trick of round
+#         else:
+# #          Let's check if contract is done
+#             if ((total_score/10) - 8)/9 >= value:
+#                 return 9
+#             else:
+#                 return -9
+
