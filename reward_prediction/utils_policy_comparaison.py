@@ -18,7 +18,7 @@ def size_sample_AB_test(risk1, risk2, var, mde, bilateral=False):
 
 def test_H0(x_A, x_B, risk1, bilateral=False):
     # Calcul de t_AB : différence des moyennes normalisée
-    diff_mean = (np.mean(x_B) - np.mean(x_A))  # diff entre les moyennes
+    diff_mean = (np.mean(x_A) - np.mean(x_B))  # diff entre les moyennes
 
     # Estimation de l'écart-type joint
     std_pooled = np.sqrt((np.var(x_B) / len(x_B)) + (np.var(x_A) / len(x_A)))
@@ -27,7 +27,7 @@ def test_H0(x_A, x_B, risk1, bilateral=False):
     # Seuil correspondant au risk de première espèce défini
     if bilateral:
         t = scs.norm(0, 1).ppf(1 - risk1 / 2)
-        return np.abs(stat < t), t, stat
+        return np.abs(stat) < t, t, stat
     else:
         t = scs.norm(0, 1).ppf(1 - risk1)
         return (stat < t), t, stat
