@@ -102,7 +102,8 @@ class GymCoinche(Env):
         # Handle end of trick
         winner = self.trick.winner
         trick_score_factor = ai_player.index % 2 == winner.index % 2
-        reward = self._get_reward(self.trick,
+        rewa
+        rd = self._get_reward(self.trick,
                                   self.total_score,
                                   trick_score_factor,
                                   self.value)
@@ -225,13 +226,18 @@ class GymCoinche(Env):
 
     def _get_reward(self, trick, total_score, trick_score_factor, value, normalisation_trick=10):
         # trick reward: if not last trick
-        # if trick.trick_number < 8:
         if True:
             score = trick.score()
             if trick_score_factor:
                 return score  / normalisation_trick
             else:
                 return - score / normalisation_trick
+        # if True:
+        #     score = trick.score()
+        #     if trick_score_factor:
+        #         return np.exp(score  / normalisation_trick)
+        #     else:
+        #         return - np.exp(score / normalisation_trick)
 
         # if this is last trick of round
 #         else:

@@ -101,6 +101,10 @@ env_params = GymVectorEnvironment(level='coinche-v1') <--- change level name giv
 # to run a coach preset
 
 $ coach -p ./preset.py -e coinche -ep ./experiments/ -s 270 -c
+
+# To run a coach preset restarting training at a checkpoint
+coach -p ./preset.py -e coinche -ep ./experiments/ -s 270 -c -crd ./path/to/checkpoint/
+
 ```
 
 The training will be save in the directory ./experiments, and the tensorflow checkpoints will be saved every 270 seconds
