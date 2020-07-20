@@ -102,8 +102,7 @@ class GymCoinche(Env):
         # Handle end of trick
         winner = self.trick.winner
         trick_score_factor = ai_player.index % 2 == winner.index % 2
-        rewa
-        rd = self._get_reward(self.trick,
+        reward = self._get_reward(self.trick,
                                   self.total_score,
                                   trick_score_factor,
                                   self.value)
