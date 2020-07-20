@@ -25,7 +25,9 @@ class Trick:
             if player.has_suit(self.suit):
                 raise MustPlayCurrentSuit("Must play the suit of the current trick", self.suit)
             # he is not playing atout and the partner is not winning
-            elif card.suit != self.atout_suit and player.has_suit(self.atout_suit) and player.index - 2 != self.winner:
+            elif card.suit != self.atout_suit \
+                    and player.has_suit(self.atout_suit) \
+                    and (player.index - self.winner.index) % 2 == 1:
                 raise MustPlayAtout()
             elif card.suit == self.atout_suit:
                 # Player can play a higher atout but doesn't do so --> forced to play a higher atout
