@@ -1,0 +1,8 @@
+{
+    "github.copilot.enable": {
+        "markdown": true,
+        "plaintext": true,
+        "scminput": true
+    },
+    "github.copilot.chat.localeOverride": "en"
+}
