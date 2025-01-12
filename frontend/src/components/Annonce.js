@@ -1,21 +1,68 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './Annonce.css';
 
-const Annonce = () => {
-    const [gameState, setGameState] = useState('');
-    const [annonce, setAnnonce] = useState(null);
+const Annonce = ({ onAnnonce }) => {
+    const values = [80, 90, 100, 110, 120, 130, 140, 150, 160];
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+
+    const [selectedValue, setSelectedValue] = useState(null);
+    const [selectedSuit, setSelectedSuit] = useState(null);
+    const [currentContractValue, setCurrentContractValue] = useState(80);
+    const [currentContractHolder, setCurrentContractHolder] = useState('opponent');
+
+    const handleValueClick = (value) => {
+        setSelectedValue(value);
+    };
+
+    const handleSuitClick = (suit) => {
+        setSelectedSuit(suit);
+    };
 
     const handleAnnonce = async () => {
-        const response = await axios.post('http://localhost:5000/annonce', { game_state: gameState });
-        setAnnonce(response.data.annonce);
+        if (selectedValue && selectedSuit) {
+            const annonce = { value: selectedValue, suit: selectedSuit };
+            onAnnonce(annonce);
+
+            try {
+                const response = await axios.post('http://localhost:5000/annonce', {
+                    player_index: 1,  // Assuming player 1 is making the annonce
+                    current_contract_value: currentContractValue,
+                    current_contract_holder: currentContractHolder
+                });
+                console.log("Annonce result:", response.data.annonce);
+            } catch (error) {
+                console.error("There was an error getting the annonce:", error);
+            }
+        }
     };
 
     return (
-        <div>
-            <h1>Annonce Phase</h1>
-            <textarea value={gameState} onChange={(e) => setGameState(e.target.value)} placeholder="Enter game state"></textarea>
-            <button onClick={handleAnnonce}>Get Annonce</button>
-            {annonce && <div><h2>Annonce:</h2><p>{annonce}</p></div>}
+        <div className="annonce">
+            <h2>Annonce Phase</h2>
+            <div className="values">
+                {values.map((value) => (
+                    <button
+                        key={value}
+                        className={`annonce-button ${selectedValue === value ? 'selected' : ''}`}
+                        onClick={() => handleValueClick(value)}
+                    >
+                        {value}
+                    </button>
+                ))}
+            </div>
+            <div className="suits">
+                {suits.map((suit) => (
+                    <button
+                        key={suit}
+                        className={`annonce-button ${selectedSuit === suit ? 'selected' : ''}`}
+                        onClick={() => handleSuitClick(suit)}
+                    >
+                        {suit}
+                    </button>
+                ))}
+            </div>
+            <button onClick={handleAnnonce} className="annonce-submit">Submit Annonce</button>
         </div>
     );
 };

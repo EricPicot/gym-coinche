@@ -2,3 +2,4 @@ scikit-learn
 openai
 gym
 flask
+python-dotenv

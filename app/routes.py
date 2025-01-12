@@ -12,6 +12,9 @@ def initialize():
 
 @main.route('/annonce', methods=['POST'])
 def annonce():
-    game_state = request.json.get('game_state')
-    annonce = env.annonce_phase(game_state)
-    return jsonify({"annonce": annonce})
+    data = request.json
+    player_index = data.get('player_index')
+    current_contract_value = data.get('current_contract_value')
+    current_contract_holder = data.get('current_contract_holder')
+    annonce_result = env.annonce_phase(player_index, current_contract_value, current_contract_holder)
+    return jsonify({"annonce": annonce_result})

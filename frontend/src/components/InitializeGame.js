@@ -16,13 +16,18 @@ const InitializeGame = () => {
         }
     };
 
+    const handleAnnonce = (annonce) => {
+        console.log("Annonce submitted:", annonce);
+        // You can send the annonce to the backend or handle it as needed
+    };
+
     return (
         <div>
             <h1>Initialize Game</h1>
             <button onClick={handleInitialize}>Initialize Game</button>
             {playersHands && (
                 <div>
-                    <CardTable playersHands={playersHands} />
+                    <CardTable playersHands={playersHands} onAnnonce={handleAnnonce} />
                 </div>
             )}
         </div>

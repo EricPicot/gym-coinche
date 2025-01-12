@@ -1,7 +1,8 @@
 import React from 'react';
 import './CardTable.css';
+import Annonce from './Annonce';
 
-const CardTable = ({ playersHands }) => {
+const CardTable = ({ playersHands, onAnnonce }) => {
     const getCardImage = (card) => {
         const [value, suit] = card.split(' of ');
         return `/cards/${value}_of_${suit}.png`;
@@ -43,6 +44,9 @@ const CardTable = ({ playersHands }) => {
                                 />
                             </div>
                         ))}
+                    </div>
+                    <div className="annonce-container">
+                        <Annonce onAnnonce={onAnnonce} />
                     </div>
                     <div className="player east">
                         {playersHands["Player 0"] && playersHands["Player 0"].map((card, index) => (
