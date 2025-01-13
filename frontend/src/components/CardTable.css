@@ -29,7 +29,7 @@
 
 .player.south {
     grid-area: south;
-    bottom: 20%;
+    bottom: 30%;
     left: 50%;
     transform: translateX(-50%);
 }
@@ -50,7 +50,7 @@
 
 .annonce-container {
     grid-area: annonce;
-    bottom: 5%;
+    bottom: 10%;
     left: 50%;
     transform: translateX(-50%);
     position: absolute;

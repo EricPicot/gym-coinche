@@ -16,9 +16,16 @@ const InitializeGame = () => {
         }
     };
 
-    const handleAnnonce = (annonce) => {
-        console.log("Annonce submitted:", annonce);
-        // You can send the annonce to the backend or handle it as needed
+    const handleAnnonce = (human_annonce) => {
+        console.log("Annonce submitted:", human_annonce);
+        // Send the annonce to the backend
+        axios.post('http://localhost:5000/annonce', { human_annonce })
+            .then(response => {
+                console.log("Annonce result:", response.data);
+            })
+            .catch(error => {
+                console.error("There was an error getting the annonce:", error);
+            });
     };
 
     return (

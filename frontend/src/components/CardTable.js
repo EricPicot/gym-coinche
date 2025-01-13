@@ -13,7 +13,7 @@ const CardTable = ({ playersHands, onAnnonce }) => {
             {playersHands && (
                 <>
                     <div className="player north">
-                        {playersHands["Player 3"] && playersHands["Player 3"].map((card, index) => (
+                        {playersHands["North"] && playersHands["North"].map((card, index) => (
                             <div key={index} className="card rotated">
                                 <img
                                     src={getCardImage(card)}
@@ -24,7 +24,7 @@ const CardTable = ({ playersHands, onAnnonce }) => {
                         ))}
                     </div>
                     <div className="player west">
-                        {playersHands["Player 2"] && playersHands["Player 2"].map((card, index) => (
+                        {playersHands["West"] && playersHands["West"].map((card, index) => (
                             <div key={index} className="card rotated-left">
                                 <img
                                     src={getCardImage(card)}
@@ -35,7 +35,7 @@ const CardTable = ({ playersHands, onAnnonce }) => {
                         ))}
                     </div>
                     <div className="player south">
-                        {playersHands["Player 1"] && playersHands["Player 1"].map((card, index) => (
+                        {playersHands["South"] && playersHands["South"].map((card, index) => (
                             <div key={index} className="card">
                                 <img
                                     src={getCardImage(card)}
@@ -49,7 +49,7 @@ const CardTable = ({ playersHands, onAnnonce }) => {
                         <Annonce onAnnonce={onAnnonce} />
                     </div>
                     <div className="player east">
-                        {playersHands["Player 0"] && playersHands["Player 0"].map((card, index) => (
+                        {playersHands["East"] && playersHands["East"].map((card, index) => (
                             <div key={index} className="card rotated-right">
                                 <img
                                     src={getCardImage(card)}

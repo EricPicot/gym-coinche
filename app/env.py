@@ -6,7 +6,7 @@ class CoincheEnv:
     def __init__(self):
         self.llm_agent = LLM_Agent("LLM_Agent")
         self.players = [
-            Player("South", is_llm=True),  # Human player
+            Player("South", is_llm=False),  # Human player
             Player("West", is_llm=True),
             Player("North", is_llm=True),
             Player("East", is_llm=True)
@@ -16,8 +16,15 @@ class CoincheEnv:
         self.current_contract_value = 70
         self.current_contract_holder = None
         self.atout_suit = None
+        self.annonces = {player.name: None for player in self.players}  # Track each player's latest annonce
 
     def initialize_game(self):
+        self.current_contract = None
+        self.current_contract_value = 70
+        self.current_contract_holder = None
+        self.atout_suit = None
+        self.annonces = {player.name: None for player in self.players}  # Reset each player's latest annonce
+
         self.deck.reset()  # Reset the deck before dealing
         for player in self.players:
             player.reset_hand()  # Reset each player's hand
@@ -26,17 +33,7 @@ class CoincheEnv:
             player.receive_cards(hand)
             player.organize_hand()
 
-    def human_annonce(self, player_index, value, suit):
-        if value > self.current_contract_value:
-            self.current_contract_value = value
-            self.current_contract_holder = self.players[player_index].name
-            self.atout_suit = suit
-        return {
-            "annonce": f"{value} of {suit}",
-            "current_contract_value": self.current_contract_value,
-            "current_contract_holder": self.current_contract_holder
-        }
-
+            
     def annonce_phase(self, human_annonce):
         passes = 0
         while passes < 3:
@@ -46,8 +43,11 @@ class CoincheEnv:
                 elif player.is_llm:
                     annonce = self.llm_agent.get_annonce(player.name, player.hand, self.current_contract, self.current_contract_holder)
                 else:
-                    # Placeholder for human player input
-                    annonce = f"{human_annonce['value']} of {human_annonce['suit']}"
+                    print('human_annonce: ', human_annonce)
+                    if human_annonce['suit'] == "pass":
+                        annonce = "pass"
+                    else:
+                        annonce = f"{human_annonce['value']} of {human_annonce['suit']}"
 
                 if annonce == "pass":
                     passes += 1
@@ -59,6 +59,7 @@ class CoincheEnv:
                         self.current_contract_value = value
                         self.current_contract_holder = player.name
                         self.atout_suit = suit
+                        self.annonces[player.name] = annonce
                         passes = 0  # Reset passes if a higher annonce is made
                     else:
                         passes += 1
@@ -71,6 +72,6 @@ class CoincheEnv:
         return {
             "current_contract_value": self.current_contract_value,
             "current_contract_holder": self.current_contract_holder,
-            "atout_suit": self.atout_suit
+            "atout_suit": self.atout_suit,
+            "annonces": self.annonces  # Return the latest annonces
         }
-    
