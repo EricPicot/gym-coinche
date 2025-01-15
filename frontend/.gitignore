@@ -4,3 +4,9 @@ node_modules/
 __pycache__/
 .env
 .DS_Store
+# Ignore node_modules
+node_modules/
+
+# Ignore build or public folder
+public/
+dist/

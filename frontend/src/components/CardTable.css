@@ -1,12 +1,12 @@
 .card-table {
     display: grid;
     grid-template-areas:
-        "empty north empty"
-        "west empty east"
-        "empty south empty"
-        "empty annonce empty";
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: 1fr auto 1fr auto;
+        "north north north"
+        "west center east"
+        "south south south"
+        "options options options";
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr auto;
     height: 100vh;
     background-color: green;
     justify-items: center;
@@ -14,53 +14,71 @@
     position: relative;
 }
 
+.bidding-options {
+    grid-area: options;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: rgba(0, 128, 0, 0.8); /* Semi-transparent green background */
+    z-index: 2; /* Ensure bidding options are on top */
+}
+
+.bidding-options button {
+    margin: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s;
+}
+
+.bidding-options button:hover {
+    background-color: #e0e0e0;
+}
+
 .player {
     display: flex;
     flex-direction: row;
-    position: absolute;
+    position: relative;
+    z-index: 0; /* Ensure players are below bidding options */
 }
 
 .player.north {
     grid-area: north;
-    top: 10%;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .player.south {
     grid-area: south;
-    bottom: 30%;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .player.west {
     grid-area: west;
-    left: 10%;
-    top: 50%;
-    transform: translateY(-50%) rotate(90deg);
 }
 
 .player.east {
     grid-area: east;
-    right: 10%;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
 }
-
-.annonce-container {
-    grid-area: annonce;
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    position: absolute;
+.annonce {
+    background-color: white;
+    color: black;
+    border: 1px solid black;
+    padding: 5px;
+    margin-bottom: 10px;
+    display: inline-block;
+    min-width: 50px;
+    text-align: center;
 }
 
 .card {
     width: 60px;
     height: 90px;
     margin: 5px;
-    padding: 0; /* Remove padding to fit the image properly */
+    padding: 0;
     background-color: white;
     border: 1px solid black;
     border-radius: 5px;
@@ -74,18 +92,20 @@
 .card-image {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ensure the image covers the entire card area */
-    border-radius: 5px; /* Match the border radius of the card */
+    object-fit: cover;
+    border-radius: 5px;
 }
+
+
 
 .rotated {
     transform: rotate(180deg);
 }
 
 .rotated-left {
-    transform: rotate(90deg);
+    transform: rotate(180deg);
 }
 
 .rotated-right {
-    transform: rotate(-90deg);
+    transform: rotate(-0deg);
 }
